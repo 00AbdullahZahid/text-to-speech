@@ -10,10 +10,10 @@ import { useState } from "react";
  */
 
 const VOICES = [
-  { id: "amara", name: "Amara", tag: "Warm · Narration" },
-  // { id: "rune", name: "Rune", tag: "Deep · Announcer" },
-  // { id: "sena", name: "Sena", tag: "Bright · Conversational" },
-  // { id: "milo", name: "Milo", tag: "Neutral · Explainer" },
+  { id: "af_alloy", name: "Alloy"},
+  { id: "af_bella", name: "Bella"},
+  { id: "am_adam", name: "Adam"},
+  { id: "am_michael", name: "Michael"},
 ];
 
 const CHAR_LIMIT = 800;
@@ -52,7 +52,7 @@ export default function Page() {
 
       const data = await response.json();
 
-      const audioUrl = `${API_URL}/audio/${data.filename}`;
+      const audioUrl = `${API_URL}/outputs/${data.filename}`;
 
       setAudioUrl(audioUrl);
     } catch (error) {
@@ -123,7 +123,7 @@ export default function Page() {
         >
           {VOICES.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.name} — {v.tag}
+              {v.name}
             </option>
           ))}
         </select>
