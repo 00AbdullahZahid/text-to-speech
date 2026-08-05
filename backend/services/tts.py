@@ -1,6 +1,7 @@
 from kokoro import KPipeline
 import soundfile as sf
 import numpy as np
+from config import SAMPLE_RATE
 
 pipeline = KPipeline(lang_code="a")
 
@@ -23,5 +24,5 @@ def generate_speech(text: str, voiceId: str, speed: float):
     
 
 def save_audio(audio, filename):
-    sf.write(filename, audio, 24000)
+    sf.write(filename, audio, SAMPLE_RATE)
     return filename
