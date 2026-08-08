@@ -15,10 +15,10 @@ type GenerationHistoryProps = {
 
 export function GenerationHistory({ items, selectedFilename, onSelect }: GenerationHistoryProps) {
   return (
-    <section className="mt-6 rounded-[2rem] border border-[#E7E5F3] bg-[#F8F9FF] p-6 shadow-[0_20px_50px_-35px_rgba(59,47,212,0.25)]">
+    <section className="rounded-[1.75rem] border border-[#DCE9FB] bg-[#F5F9FF] p-6 shadow-[0_20px_50px_-35px_rgba(37,99,235,0.25)]">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#3B2FD4]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#2563EB]">
             Recent Generations
           </p>
           <h2 className="mt-2 text-xl font-semibold text-[#15172B]">
@@ -42,8 +42,8 @@ export function GenerationHistory({ items, selectedFilename, onSelect }: Generat
                   onClick={() => onSelect(item.filename)}
                   className={`w-full rounded-3xl border px-4 py-4 text-left transition ${
                     isActive
-                      ? "border-[#3B2FD4] bg-[#EEF2FF] shadow-sm"
-                      : "border-[#E7E5F3] bg-white hover:border-[#C7D2FE]"
+                      ? "border-[#2563EB] bg-[#DBEAFE] shadow-sm"
+                      : "border-[#DCE9FB] bg-white hover:border-[#BFDBFE]"
                   }`}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -63,7 +63,7 @@ export function GenerationHistory({ items, selectedFilename, onSelect }: Generat
           })}
         </ul>
       ) : (
-        <div className="rounded-2xl border border-dashed border-[#E7E5F3] bg-white p-6 text-sm text-[#676C89]">
+        <div className="rounded-2xl border border-dashed border-[#DCE9FB] bg-white p-6 text-sm text-[#676C89]">
           No recent audio has been generated yet.
         </div>
       )}

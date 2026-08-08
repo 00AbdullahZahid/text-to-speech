@@ -22,7 +22,7 @@ export function SpeedControl({ speed, min, max, onChange }: SpeedControlProps) {
         step={0.05}
         value={speed}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 w-full cursor-pointer accent-[#3B2FD4]"
+        className="h-1.5 w-full cursor-pointer accent-[#2563EB]"
       />
     </section>
   );
