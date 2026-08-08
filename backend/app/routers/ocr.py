@@ -1,0 +1,30 @@
+"""POST /ocr — extracts text from a base64 image using the existing OCR service.
+
+Wires services/ocr.py into the API. The frontend posts
+{ "imageData": "<dataURL>" } and expects { "text": "<extracted text>" }.
+"""
+from __future__ import annotations
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+from services.ocr import extract_text_from_base64
+
+router = APIRouter(tags=["ocr"])
+
+
+class OCRRequest(BaseModel):
+    imageData: str
+
+
+class OCRResponse(BaseModel):
+    text: str
+
+
+@router.post("/ocr", response_model=OCRResponse)
+def ocr(request: OCRRequest) -> OCRResponse:
+    try:
+        text = extract_text_from_base64(request.imageData)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return OCRResponse(text=text)
