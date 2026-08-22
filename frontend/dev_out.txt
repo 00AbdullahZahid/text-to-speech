@@ -1,0 +1,14 @@
+▲ Next.js 16.2.12 (Turbopack)
+- Local:         http://localhost:3099
+- Network:       http://10.10.106.38:3099
+- Environments: .env.local
+✓ Ready in 3.4s
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          35368
+- Dir:          C:\Users\ADMIN\text-to-speech\frontend
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 35368 /F to stop it.
+[?25h

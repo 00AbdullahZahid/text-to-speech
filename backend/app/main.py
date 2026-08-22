@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import audio as audio_router
 from app.routers import config as config_router
 from app.routers import ocr as ocr_router
+from app.routers import preview as preview_router
 from app.routers import tts as tts_router
 from config import ALLOWED_ORIGINS, OUTPUTS_DIR, STATIC_MOUNT_PATH
 from exception_handlers import (
@@ -57,6 +58,7 @@ def create_app() -> FastAPI:
 
     app.include_router(config_router.router)
     app.include_router(tts_router.router)
+    app.include_router(preview_router.router)
     app.include_router(audio_router.router)
     app.include_router(ocr_router.router)
 

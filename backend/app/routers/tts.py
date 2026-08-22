@@ -6,18 +6,20 @@ import uuid
 
 from fastapi import APIRouter
 
+from app.dependencies import UserId
 from app.repositories import audio_repository
 from config import OUTPUTS_DIR, VOICE_DISPLAY
 from logger import logger
 from models import GenerateRequest
 from services.tts import generate_speech, save_audio
+from storage import supabase_storage
 from validators import validate_generate_request
 
 router = APIRouter(tags=["tts"])
 
 
 @router.post("/generate")
-def generate(request: GenerateRequest) -> dict:
+def generate(request: GenerateRequest, user_id: UserId) -> dict:
     # Validate the request using the existing validation layer.
     validate_generate_request(request)
 
@@ -32,7 +34,7 @@ def generate(request: GenerateRequest) -> dict:
     filename = f"audio_{uuid.uuid4()}.wav"
     filepath = os.path.join(OUTPUTS_DIR, filename)
 
-    # Save the generated audio.
+    # Save the generated audio locally first (temporary copy).
     save_audio(audio, filepath)
 
     # Get the actual file size after saving.
@@ -44,6 +46,12 @@ def generate(request: GenerateRequest) -> dict:
         request.voiceId,
     )
 
+    # Upload the WAV to Supabase Storage. On success the storage path is the
+    # filename; on failure we fall back to serving the local file only.
+    storage_path = filename
+    if not supabase_storage.upload_audio(storage_path, filepath):
+        storage_path = None
+
     # Save metadata to PostgreSQL when the database is available.
     inserted = audio_repository.insert_generation(
         filename=filename,
@@ -52,6 +60,8 @@ def generate(request: GenerateRequest) -> dict:
         speed=request.speed,
         text=request.text,
         size_bytes=file_size,
+        storage_path=storage_path,
+        user_id=user_id,
     )
 
     if not inserted:

@@ -20,10 +20,11 @@ def insert_generation(
     speed: float,
     text: str,
     size_bytes: int,
+    storage_path: Optional[str] = None,
+    user_id: Optional[str] = None,
 ) -> bool:
     """Persist one generation row. Returns True on success, False if DB
-    is unavailable or the insert failed. Caller should not treat False
-    as a hard error — the filesystem metadata sidecar is the fallback.
+    is unavailable or the insert failed.
     """
     conn = build_connection()
     if conn is None:
@@ -37,35 +38,81 @@ def insert_generation(
             speed=speed,
             text=text,
             size_bytes=size_bytes,
+            storage_path=storage_path,
+            user_id=user_id,
         )
         return True
-    except Exception:
+    except Exception as exc:
+        print(f"[repo] insert_generation failed: {exc}")
         return False
     finally:
         conn.close()
 
 
-def list_generations() -> Optional[List[Dict[str, Any]]]:
+def list_generations(
+    *,
+    user_id: Optional[str] = None,
+) -> Optional[List[Dict[str, Any]]]:
     """Return rows from PostgreSQL, or None if the DB is unavailable."""
     conn = build_connection()
     if conn is None:
         return None
     try:
-        return queries.list_generations(conn)
+        return queries.list_generations(conn, user_id=user_id)
     except Exception:
         return None
     finally:
         conn.close()
 
 
-def get_generation(filename: str) -> Optional[Dict[str, Any]]:
+def count_generations(
+    *,
+    user_id: Optional[str] = None,
+) -> Optional[int]:
+    """Return the total row count from PostgreSQL, or None if unavailable."""
+    conn = build_connection()
+    if conn is None:
+        return None
+    try:
+        return queries.count_generations(conn, user_id=user_id)
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def get_generation(
+    filename: str,
+    *,
+    user_id: Optional[str] = None,
+) -> Optional[Dict[str, Any]]:
     """Return one row by filename, or None if unavailable/missing."""
     conn = build_connection()
     if conn is None:
         return None
     try:
-        return queries.get_generation(conn, filename)
+        return queries.get_generation(conn, filename, user_id=user_id)
     except Exception:
         return None
+    finally:
+        conn.close()
+
+
+def delete_generation(
+    filename: str,
+    *,
+    user_id: Optional[str] = None,
+) -> bool:
+    """Remove one row by filename. Returns True on success, False if the
+    DB is unavailable or the delete failed.
+    """
+    conn = build_connection()
+    if conn is None:
+        return False
+    try:
+        queries.delete_generation(conn, filename, user_id=user_id)
+        return True
+    except Exception:
+        return False
     finally:
         conn.close()

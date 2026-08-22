@@ -1,21 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f7ff;
-  --foreground: #15172b;
-  --surface: #ffffff;
-  --surface-muted: #eaf2fe;
-  --primary: #2563eb;
-  --primary-strong: #1D4ED8;
-  --muted: #676c89;
-  --border: #dce9fb;
+  --background: #F5F3FF;
+  --foreground: #110D2A;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F3FF;
+  --primary: #7C5CFC;
+  --primary-strong: #6A4DE6;
+  --dark: #110D2A;
+  --muted: #64748B;
+  --border: #E2E8F0;
+  --success: #10B981;
+  --error: #FF6B6B;
+  --warm: #F0C244;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-mono);
 }
 
 * {
@@ -29,21 +33,21 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f5f9ff 0%, #dbeafe 100%);
+  background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-body {
-  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body), "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 .font-mono {
-  font-family: var(--font-mono), ui-monospace, monospace;
+  font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
 }
 
 button,
@@ -51,4 +55,32 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.toast-in {
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes spectrum-pulse {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.3); }
+}
+
+.spectrum-animate .spectrum-bar {
+  transform-origin: bottom;
+  animation: spectrum-pulse 1.2s ease-in-out infinite;
 }
