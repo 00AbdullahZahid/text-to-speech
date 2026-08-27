@@ -55,12 +55,12 @@ export default function GenerationDetailPage() {
     } finally { setDeleting(false); }
   }
 
-  if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-[#7C5CFC]" /></div>;
+  if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-[#2563EB]" /></div>;
   if (!gen) return (
     <div className="mt-12 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F5F3FF] text-[#C4B5FD]"><SpectrumBars size="md" /></div>
-      <p className="text-[14px] font-semibold text-[#110D2A]">Generation not found</p>
-      <Link href="/app/history" className="mt-3 inline-block text-[13px] font-semibold text-[#7C5CFC]">Back to history</Link>
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#93C5FD]"><SpectrumBars size="md" /></div>
+      <p className="text-[14px] font-semibold text-[#0B1739]">Generation not found</p>
+      <Link href="/app/history" className="mt-3 inline-block text-[13px] font-semibold text-[#2563EB]">Back to history</Link>
     </div>
   );
 
@@ -69,20 +69,20 @@ export default function GenerationDetailPage() {
   return (
     <>
       <div className="mb-6">
-        <Link href="/app/history" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#64748B] transition hover:text-[#7C5CFC]">
+        <Link href="/app/history" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#64748B] transition hover:text-[#2563EB]">
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           Back to history
         </Link>
-        <h1 className="mt-3 font-display text-[24px] font-bold tracking-tight text-[#110D2A]">Generation Details</h1>
+        <h1 className="mt-3 font-display text-[24px] font-bold tracking-tight text-[#0B1739]">Generation Details</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-[15px] font-semibold text-[#110D2A]">Audio</h2>
+            <h2 className="mb-4 text-[15px] font-semibold text-[#0B1739]">Audio</h2>
             <AudioPlayer src={audioUrl} autoPlay={playSignal > 0} playKey={playSignal} />
             <div className="mt-4 flex gap-2">
-              <a href={audioUrl} download={gen.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#110D2A] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#1E1933]">
+              <a href={audioUrl} download={gen.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 Download WAV
               </a>
@@ -94,14 +94,14 @@ export default function GenerationDetailPage() {
           </section>
 
           <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-3 text-[15px] font-semibold text-[#110D2A]">Original text</h2>
-            <p className="text-[13px] leading-relaxed text-[#110D2A] whitespace-pre-wrap">{gen.text || "No text recorded."}</p>
+            <h2 className="mb-3 text-[15px] font-semibold text-[#0B1739]">Original text</h2>
+            <p className="text-[13px] leading-relaxed text-[#0B1739] whitespace-pre-wrap">{gen.text || "No text recorded."}</p>
           </section>
         </div>
 
         <div className="space-y-4">
           <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-[13px] font-semibold text-[#110D2A]">Metadata</h3>
+            <h3 className="mb-4 text-[13px] font-semibold text-[#0B1739]">Metadata</h3>
             <dl className="space-y-3">
               {[
                 ["Voice", gen.voice],
@@ -113,7 +113,7 @@ export default function GenerationDetailPage() {
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between">
                   <dt className="text-[12px] text-[#64748B]">{label}</dt>
-                  <dd className="text-[12px] font-medium text-[#110D2A]">{value}</dd>
+                  <dd className="text-[12px] font-medium text-[#0B1739]">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -124,10 +124,10 @@ export default function GenerationDetailPage() {
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowDeleteModal(false)}>
           <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[16px] font-bold text-[#110D2A]">Delete this generation?</h3>
+            <h3 className="text-[16px] font-bold text-[#0B1739]">Delete this generation?</h3>
             <p className="mt-2 text-[13px] text-[#64748B]">This will remove the audio file and its metadata. This action cannot be undone.</p>
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowDeleteModal(false)} className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#110D2A] transition hover:border-[#7C5CFC]">Cancel</button>
+              <button type="button" onClick={() => setShowDeleteModal(false)} className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB]">Cancel</button>
               <button type="button" onClick={handleDelete} disabled={deleting} className="rounded-xl bg-[#FF6B6B] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">{deleting ? "Deleting\u2026" : "Delete"}</button>
             </div>
           </div>

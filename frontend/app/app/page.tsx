@@ -168,10 +168,10 @@ export default function StudioPage() {
     <>
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[24px] font-bold tracking-tight text-[#110D2A]">TTS Studio</h1>
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-[#0B1739]">TTS Studio</h1>
           <p className="mt-1 text-[14px] text-[#64748B]">Create natural-sounding speech from text &mdash; or extract text from an image first.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2 rounded-full bg-[#F5F3FF] px-4 py-2 text-[11px] font-semibold text-[#7C5CFC] shadow-sm ring-1 ring-[#7C5CFC]/15">
+        <div className="flex shrink-0 items-center gap-2 rounded-full bg-[#EFF6FF] px-4 py-2 text-[11px] font-semibold text-[#2563EB] shadow-sm ring-1 ring-[#2563EB]/15">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
@@ -182,7 +182,7 @@ export default function StudioPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-[15px] font-semibold text-[#110D2A]">Script</h2>
+          <h2 className="text-[15px] font-semibold text-[#0B1739]">Script</h2>
           <p className="mt-0.5 text-[12px] text-[#64748B]">Write, paste, or import your text</p>
 
           <div className="relative mt-4">
@@ -192,11 +192,11 @@ export default function StudioPage() {
               onChange={(e) => setText(e.target.value)}
               rows={8}
               placeholder="Enter the text you want Voxa to speak..."
-              className={`w-full resize-none rounded-xl border bg-[#F5F3FF] p-4 pr-20 text-[14px] leading-relaxed text-[#110D2A] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
-                overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#7C5CFC] focus:ring-[#7C5CFC]/15"
+              className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 pr-20 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
+                overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
               }`}
             />
-            <button type="button" className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-lg bg-[#7C5CFC] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#6A4DE6]">
+            <button type="button" className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-lg bg-[#2563EB] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]">
               <span className="text-[10px]">&#10022;</span> AI assist
             </button>
           </div>
@@ -209,14 +209,14 @@ export default function StudioPage() {
           </div>
 
           <div className="mt-6 border-t border-[#E2E8F0] pt-5">
-            <h3 className="text-[13px] font-semibold text-[#110D2A]">Voice &amp; language</h3>
+            <h3 className="text-[13px] font-semibold text-[#0B1739]">Voice &amp; language</h3>
             <div className="relative mt-3" ref={voiceDropdownRef}>
               <button
                 type="button"
                 onClick={() => setVoiceDropdownOpen(!voiceDropdownOpen)}
-                className="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-[#F5F3FF] px-4 py-3 text-left transition hover:border-[#C4B5FD] focus:border-[#7C5CFC] focus:ring-2 focus:ring-[#7C5CFC]/15 focus:outline-none"
+                className="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-[#EFF6FF] px-4 py-3 text-left transition hover:border-[#93C5FD] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 focus:outline-none"
               >
-                <span className={`text-[14px] ${voiceId ? "font-medium text-[#110D2A]" : "text-[#94A3B8]"}`}>
+                <span className={`text-[14px] ${voiceId ? "font-medium text-[#0B1739]" : "text-[#94A3B8]"}`}>
                   {selectedVoiceName || "Select a voice"}
                 </span>
                 <svg className={`h-4 w-4 shrink-0 text-[#64748B] transition-transform ${voiceDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
@@ -230,7 +230,7 @@ export default function StudioPage() {
                       value={voiceSearch}
                       onChange={(e) => setVoiceSearch(e.target.value)}
                       placeholder="Search voices..."
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#F5F3FF] px-3 py-2 text-[13px] text-[#110D2A] placeholder:text-[#94A3B8] outline-none focus:border-[#7C5CFC]"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#EFF6FF] px-3 py-2 text-[13px] text-[#0B1739] placeholder:text-[#94A3B8] outline-none focus:border-[#2563EB]"
                       autoFocus
                     />
                   </div>
@@ -248,13 +248,13 @@ export default function StudioPage() {
                             type="button"
                             onClick={() => { setVoiceId(v.id); setVoiceDropdownOpen(false); setVoiceSearch(""); }}
                             className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${
-                              sel ? "bg-[#F5F3FF] font-semibold text-[#7C5CFC]" : "text-[#110D2A] hover:bg-[#F5F3FF]"
+                              sel ? "bg-[#EFF6FF] font-semibold text-[#2563EB]" : "text-[#0B1739] hover:bg-[#EFF6FF]"
                             }`}
                           >
-                            <SpectrumBars size="sm" className={sel ? "text-[#7C5CFC]" : "text-[#C4B5FD]"} />
+                            <SpectrumBars size="sm" className={sel ? "text-[#2563EB]" : "text-[#93C5FD]"} />
                             {v.name}
                             {sel && (
-                              <svg className="ml-auto h-3.5 w-3.5 shrink-0 text-[#7C5CFC]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              <svg className="ml-auto h-3.5 w-3.5 shrink-0 text-[#2563EB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                             )}
                           </button>
                         );
@@ -271,7 +271,7 @@ export default function StudioPage() {
             </div>
           </div>
 
-          <Link href="/app/ocr" className="mt-5 flex items-center gap-2 rounded-xl bg-[#F5F3FF] px-4 py-3 text-[12px] font-semibold text-[#64748B] transition hover:bg-[#EDE9FE] hover:text-[#7C5CFC]">
+          <Link href="/app/ocr" className="mt-5 flex items-center gap-2 rounded-xl bg-[#EFF6FF] px-4 py-3 text-[12px] font-semibold text-[#64748B] transition hover:bg-[#DBEAFE] hover:text-[#2563EB]">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="12" cy="13" r="3" /><path d="M16 3h-8v4" /></svg>
             Extract text from image &rarr;
           </Link>
@@ -279,10 +279,10 @@ export default function StudioPage() {
 
         <div className="flex flex-col gap-6">
           <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="text-[15px] font-semibold text-[#110D2A]">Generation settings</h2>
+            <h2 className="text-[15px] font-semibold text-[#0B1739]">Generation settings</h2>
 
             <div className="mt-5">
-              <label className="text-[12px] font-semibold text-[#110D2A]">Speed</label>
+              <label className="text-[12px] font-semibold text-[#0B1739]">Speed</label>
               <div className="mt-2.5 grid grid-cols-6 gap-1.5">
                 {SPEED_OPTIONS.map((s) => (
                   <button
@@ -291,7 +291,7 @@ export default function StudioPage() {
                     onClick={() => setSpeed(s)}
                     disabled={isGenerating}
                     className={`rounded-xl py-2.5 text-[12px] font-semibold transition ${
-                      s === speed ? "bg-[#F0C244] text-[#110D2A] shadow-sm" : "bg-[#F5F3FF] text-[#110D2A] hover:bg-[#EDE9FE]"
+                      s === speed ? "bg-[#F0C244] text-[#0B1739] shadow-sm" : "bg-[#EFF6FF] text-[#0B1739] hover:bg-[#DBEAFE]"
                     } disabled:opacity-50`}
                   >
                     {s}&times;
@@ -301,9 +301,9 @@ export default function StudioPage() {
             </div>
 
             <div className="mt-5 border-t border-[#E2E8F0] pt-5">
-              <label className="text-[12px] font-semibold text-[#110D2A]">Output</label>
+              <label className="text-[12px] font-semibold text-[#0B1739]">Output</label>
               <div className="mt-2 flex items-center gap-2">
-                <span className="rounded-lg bg-[#F5F3FF] px-3 py-1.5 text-[13px] font-semibold text-[#7C5CFC]">WAV audio</span>
+                <span className="rounded-lg bg-[#EFF6FF] px-3 py-1.5 text-[13px] font-semibold text-[#2563EB]">WAV audio</span>
               </div>
               <p className="mt-1.5 text-[11px] text-[#64748B]">Local + Supabase cloud</p>
             </div>
@@ -313,9 +313,9 @@ export default function StudioPage() {
               onClick={handleGenerate}
               disabled={!canGenerate}
               className={`mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl py-3.5 text-[14px] font-semibold transition ${
-                isGenerating ? "cursor-wait bg-[#7C5CFC] text-white opacity-80"
-                  : !canGenerate ? "cursor-not-allowed bg-[#D4D0E8] text-[#9B95C9]"
-                  : "bg-[#7C5CFC] text-white shadow-[0_8px_24px_-6px_rgba(124,92,252,0.5)] hover:bg-[#6A4DE6] active:scale-[0.99]"
+                isGenerating ? "cursor-wait bg-[#2563EB] text-white opacity-80"
+                  : !canGenerate ? "cursor-not-allowed bg-[#BFDBFE] text-[#64748B]"
+                  : "bg-[#2563EB] text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] hover:bg-[#1D4ED8] active:scale-[0.99]"
               }`}
             >
               {isGenerating ? (
@@ -333,13 +333,13 @@ export default function StudioPage() {
           </section>
 
           {isGenerating && (
-            <section className="rounded-2xl bg-[#F5F3FF] p-5 ring-1 ring-[#7C5CFC]/10">
+            <section className="rounded-2xl bg-[#EFF6FF] p-5 ring-1 ring-[#2563EB]/10">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#7C5CFC]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2563EB]">
                   <SpectrumBars size="md" animate className="text-white" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#110D2A]">Generating audio&hellip;</p>
+                  <p className="text-[14px] font-semibold text-[#0B1739]">Generating audio&hellip;</p>
                   <p className="text-[12px] text-[#64748B]">Kokoro-82M is generating your audio&hellip;</p>
                 </div>
               </div>
@@ -385,19 +385,19 @@ export default function StudioPage() {
 
           {selectedGeneration && (
             <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-[15px] font-semibold text-[#110D2A]">Playback</h2>
+              <h2 className="mb-4 text-[15px] font-semibold text-[#0B1739]">Playback</h2>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="rounded-lg bg-[#7C5CFC] px-2.5 py-1 text-[11px] font-semibold text-white">{selectedGeneration.voice}</span>
-                <span className="rounded-lg bg-[#F5F3FF] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#7C5CFC]">{selectedGeneration.speed.toFixed(2)}&times;</span>
+                <span className="rounded-lg bg-[#2563EB] px-2.5 py-1 text-[11px] font-semibold text-white">{selectedGeneration.voice}</span>
+                <span className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#2563EB]">{selectedGeneration.speed.toFixed(2)}&times;</span>
               </div>
-              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-[#110D2A] line-clamp-2">{selectedGeneration.text}</p>}
+              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-[#0B1739] line-clamp-2">{selectedGeneration.text}</p>}
               <AudioPlayer src={audioUrl} autoPlay={playSignal > 0} playKey={playSignal} />
               <div className="mt-3 flex gap-2">
-                <a href={audioUrl} download={selectedGeneration.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#110D2A] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#1E1933]">
+                <a href={audioUrl} download={selectedGeneration.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   Download WAV
                 </a>
-                <Link href={`/app/history/${encodeURIComponent(selectedGeneration.filename)}`} className="flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#110D2A] transition hover:border-[#7C5CFC] hover:text-[#7C5CFC]">
+                <Link href={`/app/history/${encodeURIComponent(selectedGeneration.filename)}`} className="flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]">
                   Details
                 </Link>
               </div>
@@ -409,25 +409,25 @@ export default function StudioPage() {
       {history.length > 0 && (
         <section className="mt-8">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold text-[#110D2A]">Recent generations</h2>
-            <Link href="/app/history" className="text-[12px] font-semibold text-[#7C5CFC] transition hover:text-[#6A4DE6]">View history &rarr;</Link>
+            <h2 className="text-[15px] font-semibold text-[#0B1739]">Recent generations</h2>
+            <Link href="/app/history" className="text-[12px] font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]">View history &rarr;</Link>
           </div>
           <div className="space-y-2.5">
             {history.slice(0, 3).map((item) => {
               const dl = item.audio_url?.startsWith("http") ? item.audio_url : `${API_URL}/outputs/${item.filename}`;
               return (
                 <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-white px-5 py-3.5 shadow-sm transition hover:shadow-md">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F5F3FF] text-[#7C5CFC]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EFF6FF] text-[#2563EB]">
                     <SpectrumBars size="sm" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[#110D2A]">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
+                    <p className="truncate text-[13px] font-semibold text-[#0B1739]">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
                     <p className="text-[11px] text-[#64748B]">{item.voice} &middot; {item.speed}&times;</p>
                   </div>
-                  <button type="button" onClick={() => { setSelectedGeneration(item); setPlaySignal((v) => v + 1); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7C5CFC] text-white transition hover:bg-[#6A4DE6]" title="Play">
+                  <button type="button" onClick={() => { setSelectedGeneration(item); setPlaySignal((v) => v + 1); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white transition hover:bg-[#1D4ED8]" title="Play">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                   </button>
-                  <a href={dl} download={item.filename} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#F5F3FF] text-[#7C5CFC] transition hover:bg-[#EDE9FE]" title="Download">
+                  <a href={dl} download={item.filename} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] text-[#2563EB] transition hover:bg-[#DBEAFE]" title="Download">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   </a>
                 </div>

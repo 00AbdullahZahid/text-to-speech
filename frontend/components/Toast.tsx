@@ -27,7 +27,7 @@ export function Toast({ toast, onDismiss }: ToastProps) {
   return (
     <div
       role="status"
-      className={`toast-in pointer-events-auto flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-[0_20px_50px_-20px_rgba(124,92,252,0.35)] ${TONE_STYLES[toast.tone]}`}
+      className={`toast-in pointer-events-auto flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm shadow-[0_20px_50px_-20px_rgba(37,99,235,0.35)] ${TONE_STYLES[toast.tone]}`}
     >
       <svg
         className="mt-px h-4 w-4 shrink-0"

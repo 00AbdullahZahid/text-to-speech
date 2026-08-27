@@ -74,11 +74,11 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className={`flex h-full shrink-0 flex-col bg-[#110D2A] transition-all duration-200 ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
+    <aside className={`flex h-full shrink-0 flex-col bg-[#0B1739] transition-all duration-200 ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
       {/* Logo */}
       <div className={`pb-7 pt-6 ${collapsed ? "px-3 flex justify-center" : "px-5"}`}>
         <Link href="/app" className="flex items-center gap-3" title="Voxa">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#7C5CFC]">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB]">
             <span className="font-display text-sm font-bold text-white">V</span>
           </div>
           {!collapsed && (
@@ -105,7 +105,7 @@ export function Sidebar() {
                   item.active
                     ? collapsed
                       ? "bg-white/[0.08] text-white"
-                      : "border-l-[3px] border-[#7C5CFC] bg-white/[0.08] pl-[9px] text-white"
+                      : "border-l-[3px] border-[#2563EB] bg-white/[0.08] pl-[9px] text-white"
                     : "text-white/50 hover:bg-white/[0.05] hover:text-white/80"
                 }`}
               >
@@ -131,7 +131,7 @@ export function Sidebar() {
                 pathname.startsWith("/app/settings")
                   ? collapsed
                     ? "bg-white/[0.08] text-white"
-                    : "border-l-[3px] border-[#7C5CFC] bg-white/[0.08] pl-[9px] text-white"
+                    : "border-l-[3px] border-[#2563EB] bg-white/[0.08] pl-[9px] text-white"
                   : "text-white/50 hover:bg-white/[0.05] hover:text-white/80"
               }`}
             >
@@ -164,7 +164,7 @@ export function Sidebar() {
       {!collapsed && (
         <div className="mx-3 mb-3 rounded-xl bg-white/[0.04] p-4">
           <div className="flex items-center gap-2.5">
-            <SpectrumBars size="sm" className="text-[#7C5CFC]" />
+            <SpectrumBars size="sm" className="text-[#2563EB]" />
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30">TTS Engine</p>
               <p className="mt-0.5 text-[13px] font-semibold text-white">Kokoro-82M</p>

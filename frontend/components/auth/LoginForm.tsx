@@ -10,10 +10,10 @@ type View = "login" | "forgot" | "reset-sent";
 
 function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-[#110D2A] lg:flex lg:w-[45%] lg:items-center lg:justify-center">
+    <div className="relative hidden overflow-hidden bg-[#0B1739] lg:flex lg:w-[45%] lg:items-center lg:justify-center">
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
       <div className="relative z-10 flex flex-col items-center px-12 text-center">
-        <SpectrumBars size="xl" animate className="text-[#7C5CFC] mb-10" />
+        <SpectrumBars size="xl" animate className="text-[#2563EB] mb-10" />
         <h2 className="font-display text-[32px] font-bold leading-tight text-white">Turn words<br />into voice.</h2>
         <p className="mt-4 max-w-[280px] text-[15px] leading-relaxed text-white/50">AI-powered text-to-speech that sounds natural. Create voiceovers in seconds.</p>
       </div>
@@ -62,10 +62,10 @@ export function LoginForm() {
         <div className="flex flex-1 items-center justify-center px-6 py-12">
           <div className="w-full max-w-[400px]">
             <Link href="/" className="inline-flex items-center gap-2.5 lg:hidden mb-8">
-              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#7C5CFC]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#2563EB]">
                 <span className="font-display text-base font-bold text-white">V</span>
               </div>
-              <span className="font-display text-xl font-bold text-[#110D2A]">Voxa</span>
+              <span className="font-display text-xl font-bold text-[#0B1739]">Voxa</span>
             </Link>
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 mx-auto">
               <svg className="h-7 w-7 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -73,12 +73,12 @@ export function LoginForm() {
                 <polyline points="22,6 12,13 2,6" />
               </svg>
             </div>
-            <h1 className="mt-6 text-center font-display text-[24px] font-bold text-[#110D2A]">Check your email</h1>
+            <h1 className="mt-6 text-center font-display text-[24px] font-bold text-[#0B1739]">Check your email</h1>
             <p className="mt-2 text-center text-[14px] leading-relaxed text-[#64748B]">
               We sent a password reset link to<br />
-              <span className="font-medium text-[#110D2A]">{resetEmail}</span>
+              <span className="font-medium text-[#0B1739]">{resetEmail}</span>
             </p>
-            <button type="button" onClick={() => { setView("login"); setResetEmail(""); setError(""); }} className="mt-8 w-full rounded-xl border border-[#E2E8F0] bg-white py-3 text-[14px] font-semibold text-[#110D2A] transition hover:border-[#7C5CFC] hover:text-[#7C5CFC]">
+            <button type="button" onClick={() => { setView("login"); setResetEmail(""); setError(""); }} className="mt-8 w-full rounded-xl border border-[#E2E8F0] bg-white py-3 text-[14px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]">
               Back to sign in
             </button>
           </div>
@@ -94,13 +94,13 @@ export function LoginForm() {
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-[400px]">
           <Link href="/" className="inline-flex items-center gap-2.5 lg:hidden mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#7C5CFC]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#2563EB]">
               <span className="font-display text-base font-bold text-white">V</span>
             </div>
-            <span className="font-display text-xl font-bold text-[#110D2A]">Voxa</span>
+            <span className="font-display text-xl font-bold text-[#0B1739]">Voxa</span>
           </Link>
 
-          <h1 className="font-display text-[26px] font-bold text-[#110D2A]">
+          <h1 className="font-display text-[26px] font-bold text-[#0B1739]">
             {view === "forgot" ? "Reset your password" : "Welcome back"}
           </h1>
           {view === "forgot" && (
@@ -116,7 +116,7 @@ export function LoginForm() {
                 </div>
               )}
 
-              <label className="block text-[13px] font-semibold text-[#110D2A]">Email</label>
+              <label className="block text-[13px] font-semibold text-[#0B1739]">Email</label>
               <input
                 type="email"
                 required
@@ -124,15 +124,15 @@ export function LoginForm() {
                 onChange={(e) => setResetEmail(e.target.value)}
                 onFocus={() => setFocused("reset-email")}
                 onBlur={() => setFocused(null)}
-                className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "reset-email" ? "border-[#7C5CFC] ring-2 ring-[#7C5CFC]/15" : "border-[#E2E8F0]"} bg-[#F5F3FF]`}
+                className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "reset-email" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`}
                 placeholder="you@example.com"
               />
 
-              <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-[#7C5CFC] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(124,92,252,0.5)] transition hover:bg-[#6A4DE6] disabled:cursor-not-allowed disabled:opacity-60">
+              <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-[#2563EB] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60">
                 {loading ? "Sending\u2026" : "Send reset link"}
               </button>
 
-              <button type="button" onClick={() => { setView("login"); setError(""); }} className="mt-5 w-full text-center text-[13px] font-semibold text-[#64748B] transition hover:text-[#7C5CFC]">
+              <button type="button" onClick={() => { setView("login"); setError(""); }} className="mt-5 w-full text-center text-[13px] font-semibold text-[#64748B] transition hover:text-[#2563EB]">
                 &larr; Back to sign in
               </button>
             </form>
@@ -146,23 +146,23 @@ export function LoginForm() {
                   </div>
                 )}
 
-                <label className="block text-[13px] font-semibold text-[#110D2A]">Email</label>
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "email" ? "border-[#7C5CFC] ring-2 ring-[#7C5CFC]/15" : "border-[#E2E8F0]"} bg-[#F5F3FF]`} placeholder="you@example.com" />
+                <label className="block text-[13px] font-semibold text-[#0B1739]">Email</label>
+                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "email" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`} placeholder="you@example.com" />
 
-                <label className="mt-5 block text-[13px] font-semibold text-[#110D2A]">Password</label>
-                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "password" ? "border-[#7C5CFC] ring-2 ring-[#7C5CFC]/15" : "border-[#E2E8F0]"} bg-[#F5F3FF]`} placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
+                <label className="mt-5 block text-[13px] font-semibold text-[#0B1739]">Password</label>
+                <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "password" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`} placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" />
 
                 <div className="mt-2.5 text-right">
-                  <button type="button" onClick={() => { setView("forgot"); setResetEmail(email); setError(""); }} className="text-[12px] font-semibold text-[#7C5CFC] transition hover:text-[#6A4DE6]">Forgot password?</button>
+                  <button type="button" onClick={() => { setView("forgot"); setResetEmail(email); setError(""); }} className="text-[12px] font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]">Forgot password?</button>
                 </div>
 
-                <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-[#7C5CFC] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(124,92,252,0.5)] transition hover:bg-[#6A4DE6] disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="submit" disabled={loading} className="mt-6 w-full rounded-xl bg-[#2563EB] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60">
                   {loading ? "Signing in\u2026" : "Sign in"}
                 </button>
 
                 <p className="mt-5 text-center text-[13px] text-[#64748B]">
                   Don&apos;t have an account?{" "}
-                  <Link href="/register" className="font-semibold text-[#7C5CFC] transition hover:text-[#6A4DE6]">Create one</Link>
+                  <Link href="/register" className="font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]">Create one</Link>
                 </p>
               </form>
             </>

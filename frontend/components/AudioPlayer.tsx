@@ -88,7 +88,7 @@ export function AudioPlayer({
   }
 
   return (
-    <div className="rounded-2xl bg-[#F5F3FF] p-4">
+    <div className="rounded-2xl bg-[#EFF6FF] p-4">
       <audio
         ref={audioRef}
         src={src}
@@ -125,7 +125,7 @@ export function AudioPlayer({
             type="button"
             onClick={togglePlay}
             aria-label={isPlaying ? "Pause audio" : "Play audio"}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#7C5CFC] text-white shadow-[0_8px_20px_-8px_rgba(124,92,252,0.7)] transition hover:bg-[#6A4DE6] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#7C5CFC]/30 focus:ring-offset-2"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white shadow-[0_8px_20px_-8px_rgba(37,99,235,0.7)] transition hover:bg-[#1D4ED8] active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 focus:ring-offset-2"
           >
             {isLoading ? (
               <Spinner className="h-4 w-4" />
@@ -160,7 +160,7 @@ export function AudioPlayer({
                   <div
                     key={i}
                     className={`flex-1 rounded-full transition-colors duration-75 ${
-                      isPlayed ? "bg-[#7C5CFC]" : "bg-[#D4D0E8] group-hover:bg-[#C4BFDE]"
+                      isPlayed ? "bg-[#2563EB]" : "bg-[#BFDBFE] group-hover:bg-[#BFDBFE]"
                     }`}
                     style={{ height: `${h * 100}%` }}
                   />
