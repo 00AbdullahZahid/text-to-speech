@@ -19,6 +19,7 @@ curated-tokenizers==0.0.9
 curated-transformers==0.1.1
 cymem==2.0.13
 dlinfo==2.0.0
+python-dotenv>=1.0.0
 docopt==0.6.2
 espeakng-loader==0.2.4
 fastapi==0.141.1
