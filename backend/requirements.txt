@@ -52,6 +52,7 @@ packaging==26.2
 phonemizer-fork==3.3.2
 preshed==3.0.13
 pycparser==3.0
+psycopg2-binary
 pydantic==2.13.4
 pydantic_core==2.46.4
 Pygments==2.20.0
