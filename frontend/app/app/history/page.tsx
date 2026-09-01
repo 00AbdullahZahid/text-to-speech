@@ -13,6 +13,7 @@ type Generation = {
   size: number;
   created_at: string;
   audio_url?: string;
+  format?: string;
 };
 
 function formatDate(iso: string) {
@@ -129,7 +130,7 @@ export default function HistoryPage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-semibold text-[#0B1739]">{item.text ? (item.text.length > 50 ? item.text.slice(0, 50) + "\u2026" : item.text) : "Untitled"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#64748B]">
-                    <span>{item.voice}</span><span>&middot;</span><span>{item.speed}&times;</span><span>&middot;</span><span>{formatDate(item.created_at)}</span>
+                    <span>{item.voice}</span><span>&middot;</span><span>{item.speed}&times;</span><span>&middot;</span><span className="uppercase">{item.format || "wav"}</span><span>&middot;</span><span>{formatDate(item.created_at)}</span>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">

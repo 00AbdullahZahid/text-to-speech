@@ -33,7 +33,7 @@ def preview_voice(voiceId: str, speed: float = 1.0) -> Response:
     name = VOICE_DISPLAY.get(voiceId, voiceId)
     text = PREVIEW_TEXT.format(name=name)
 
-    audio = generate_speech(text, voiceId, speed)
+    audio, _segments = generate_speech(text, voiceId, speed)
 
     buffer = io.BytesIO()
     sf.write(buffer, audio, SAMPLE_RATE, format="wav")

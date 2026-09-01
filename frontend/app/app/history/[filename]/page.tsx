@@ -16,6 +16,8 @@ type Generation = {
   created_at: string;
   audio_url?: string;
   storage_path?: string;
+  format?: string;
+  has_subtitles?: boolean;
 };
 
 function formatDate(iso: string) {
@@ -55,6 +57,24 @@ export default function GenerationDetailPage() {
     } finally { setDeleting(false); }
   }
 
+  async function handleDownloadSubtitles() {
+    try {
+      const res = await apiFetch(`/generate/${encodeURIComponent(gen!.filename)}/subtitles`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = gen!.filename.replace(/\.[^.]+$/, "") + ".srt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Subtitles unavailable for this file.");
+    }
+  }
+
   if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-[#2563EB]" /></div>;
   if (!gen) return (
     <div className="mt-12 text-center">
@@ -84,8 +104,14 @@ export default function GenerationDetailPage() {
             <div className="mt-4 flex gap-2">
               <a href={audioUrl} download={gen.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                Download WAV
+                Download {(gen.format || "wav").toUpperCase()}
               </a>
+              {gen.has_subtitles && (
+                <button type="button" onClick={handleDownloadSubtitles} className="flex items-center justify-center gap-2 rounded-xl border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2.5 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#DBEAFE]">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="10" y1="13" x2="14" y2="13" /><line x1="10" y1="17" x2="14" y2="17" /><line x1="8" y1="13" x2="6" y2="13" /><line x1="8" y1="17" x2="6" y2="17" /></svg>
+                  SRT
+                </button>
+              )}
               <button type="button" onClick={() => setShowDeleteModal(true)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-[#FF6B6B] transition hover:bg-red-50">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
                 Delete
@@ -106,7 +132,7 @@ export default function GenerationDetailPage() {
               {[
                 ["Voice", gen.voice],
                 ["Speed", `${gen.speed}\u00d7`],
-                ["File type", "WAV"],
+                ["File type", (gen.format || "wav").toUpperCase()],
                 ["Size", formatSize(gen.size)],
                 ["Created", formatDate(gen.created_at)],
                 ["Storage", gen.storage_path ? "Supabase + Local" : "Local only"],

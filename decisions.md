@@ -241,3 +241,34 @@ Every meaningful decision, why it was made, and when it changed.
 **Decision:** `max_pixels=640 * 28 * 28` (≈500K pixels) for the Qwen VL processor.
 
 **Reason:** Larger images consume proportionally more memory and inference time. 640 * 28 * 28 is the recommended default for Qwen2.5-VL — it preserves enough resolution for readable text while keeping CPU inference under ~10 seconds per image. Larger images are downscaled automatically by the processor.
+
+
+## 30. Multiple Output Formats (WAV/MP3/OGG/FLAC)
+
+**Decision:** Accept a user-selected `format` on `POST /generate` and `POST /generate/batch`, chosen from an allowlist in `config.AUDIO_FORMATS`.
+
+**Reason:** soundfile/libsndfile in the backend already supports all four containers, so the extension determines the container and only MP3 needs an explicit container hint. Storing the format on each generation row lets history/detail pages render the correct badge and download label instead of hardcoding WAV.
+
+## 31. Voice Preview in the Dropdown
+
+**Decision:** Reuse the existing unauthenticated `GET /preview?voiceId=` endpoint and add a small play button to each row of the voice dropdown.
+
+**Reason:** The endpoint already synthesized a short sample; surfacing it inline avoids a full generate cycle when auditioning voices. A single shared `HTMLAudioElement` prevents overlapping previews.
+
+## 32. Word-Timestamp Subtitles (SRT)
+
+**Decision:** Generate a sidecar `.srt` file alongside every generation; `has_subtitles` is stored on the row and `GET /generate/{filename}/subtitles` serves it (authenticated).
+
+**Reason:** Kokoro already exposes per-word `start_ts`/`end_ts` on its MToken objects, so word-accurate cues are available with no extra model. Punctuation-only tokens are folded into the preceding word and a small gap is enforced so cues don't overlap.
+
+## 33. Batch Generation
+
+**Decision:** Add `POST /generate/batch` taking a list of items (text, voiceId, speed, format), capped at `MAX_BATCH_ITEMS` (20). Each item reuses the single-generation code path.
+
+**Reason:** A shared `_run_generation` helper keeps single and batch behavior identical and lets one batch report per-item success/errors. All items are generated sequentially on the single CPU worker; batching is a UX convenience, not a concurrency guarantee.
+
+## 34. Saved Voice Presets
+
+**Decision:** Add a new `voice_presets` table and `GET/POST/PATCH/DELETE /presets` routes, user-scoped via the JWT `sub`.
+
+**Reason:** Presets are (name, voiceId, speed, format) tuples with their own lifecycle and list UI; a dedicated table and router keep them independent of the generation metadata table. A per-user cap (50) prevents unbounded growth.

@@ -4,6 +4,8 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from config import (
+    AUDIO_FORMATS,
+    MAX_BATCH_ITEMS,
     MAX_SPEED,
     MAX_TEXT_LENGTH,
     MIN_SPEED,
@@ -24,4 +26,9 @@ def get_config() -> dict:
         "minSpeed": MIN_SPEED,
         "maxSpeed": MAX_SPEED,
         "outputsPath": STATIC_MOUNT_PATH,
+        "formats": [
+            {"id": fmt_id, "label": fmt_id.upper(), "ext": cfg["ext"], "mime": cfg["mime"]}
+            for fmt_id, cfg in AUDIO_FORMATS.items()
+        ],
+        "maxBatchItems": MAX_BATCH_ITEMS,
     }

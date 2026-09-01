@@ -22,6 +22,8 @@ def insert_generation(
     size_bytes: int,
     storage_path: Optional[str] = None,
     user_id: Optional[str] = None,
+    audio_format: str = "wav",
+    has_subtitles: bool = False,
 ) -> bool:
     """Persist one generation row. Returns True on success, False if DB
     is unavailable or the insert failed.
@@ -40,6 +42,8 @@ def insert_generation(
             size_bytes=size_bytes,
             storage_path=storage_path,
             user_id=user_id,
+            audio_format=audio_format,
+            has_subtitles=has_subtitles,
         )
         return True
     except Exception as exc:
@@ -114,5 +118,126 @@ def delete_generation(
         return True
     except Exception:
         return False
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Presets
+# ---------------------------------------------------------------------------
+
+
+def list_presets(
+    *,
+    user_id: str,
+) -> Optional[List[Dict[str, Any]]]:
+    conn = build_connection()
+    if conn is None:
+        return None
+    try:
+        return queries.list_presets(conn, user_id=user_id)
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def get_preset(
+    preset_id: int,
+    *,
+    user_id: str,
+) -> Optional[Dict[str, Any]]:
+    conn = build_connection()
+    if conn is None:
+        return None
+    try:
+        return queries.get_preset(conn, preset_id, user_id=user_id)
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def insert_preset(
+    *,
+    user_id: str,
+    name: str,
+    voice_id: str,
+    speed: float,
+    audio_format: str = "wav",
+) -> Optional[int]:
+    conn = build_connection()
+    if conn is None:
+        return None
+    try:
+        return queries.insert_preset(
+            conn,
+            user_id=user_id,
+            name=name,
+            voice_id=voice_id,
+            speed=speed,
+            audio_format=audio_format,
+        )
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def update_preset(
+    preset_id: int,
+    *,
+    user_id: str,
+    name: Optional[str] = None,
+    voice_id: Optional[str] = None,
+    speed: Optional[float] = None,
+    audio_format: Optional[str] = None,
+) -> bool:
+    conn = build_connection()
+    if conn is None:
+        return False
+    try:
+        return queries.update_preset(
+            conn,
+            preset_id,
+            user_id=user_id,
+            name=name,
+            voice_id=voice_id,
+            speed=speed,
+            audio_format=audio_format,
+        )
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def delete_preset(
+    preset_id: int,
+    *,
+    user_id: str,
+) -> bool:
+    conn = build_connection()
+    if conn is None:
+        return False
+    try:
+        return queries.delete_preset(conn, preset_id, user_id=user_id)
+    except Exception:
+        return False
+    finally:
+        conn.close()
+
+
+def count_presets(
+    *,
+    user_id: str,
+) -> Optional[int]:
+    conn = build_connection()
+    if conn is None:
+        return None
+    try:
+        return queries.count_presets(conn, user_id=user_id)
+    except Exception:
+        return None
     finally:
         conn.close()

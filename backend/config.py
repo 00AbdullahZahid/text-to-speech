@@ -18,6 +18,29 @@ AUDIO_EXTENSIONS = {
     ".flac",
 }
 
+# Supported output formats: id -> (extension, soundfile format, mime type).
+# soundfile infers the container from the extension, so the "format" argument
+# passed to sf.write is only needed for unambiguous cases (e.g. raw).
+AUDIO_FORMATS = {
+    "wav": {"ext": ".wav", "mime": "audio/wav"},
+    "mp3": {"ext": ".mp3", "mime": "audio/mpeg"},
+    "ogg": {"ext": ".ogg", "mime": "audio/ogg"},
+    "flac": {"ext": ".flac", "mime": "audio/flac"},
+}
+DEFAULT_AUDIO_FORMAT = "wav"
+VALID_AUDIO_FORMATS = set(AUDIO_FORMATS.keys())
+
+SUBTITLE_EXT = ".srt"
+SUBTITLE_MIME = "application/x-subrip"
+
+# Batch generation
+MAX_BATCH_ITEMS = 20
+BATCH_TEXT_MAX_LENGTH = 800
+
+# Presets
+PRESET_NAME_MAX_LENGTH = 60
+MAX_PRESETS_PER_USER = 50
+
 # Voices
 VOICES = {
     "af_alloy": "Alloy",

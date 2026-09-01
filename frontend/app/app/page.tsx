@@ -7,40 +7,41 @@ import { AudioPlayer } from "../../components/AudioPlayer";
 import { ToastStack, type ToastItem } from "../../components/Toast";
 import { SpectrumBars } from "../../components/SpectrumBars";
 import { API_URL, apiFetch } from "../../lib/api";
-
-type VoiceOption = { id: string; name: string };
-type Generation = {
-  filename: string;
-  voice: string;
-  voiceId?: string;
-  speed: number;
-  text: string;
-  size: number;
-  created_at: string;
-  storage_path?: string;
-  audio_url?: string;
-};
-type AppConfig = {
-  voices: VoiceOption[];
-  minTextLength: number;
-  maxTextLength: number;
-  minSpeed: number;
-  maxSpeed: number;
-};
+import type {
+  AudioFormat,
+  Generation,
+  AppConfig,
+  Preset,
+  BatchItemResult,
+  BatchResponse,
+} from "../../lib/types";
 
 const SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+const FORMAT_LABELS: Record<AudioFormat, string> = {
+  wav: "WAV",
+  mp3: "MP3",
+  ogg: "OGG",
+  flac: "FLAC",
+};
+
+type Mode = "single" | "batch";
 
 export default function StudioPage() {
   const searchParams = useSearchParams();
-  const [text, setText] = useState("");
+  const [text, setText] = useState<string>(() => searchParams.get("ocrText") ?? "");
   const [voiceId, setVoiceId] = useState("");
-  const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([]);
+  const [voiceOptions, setVoiceOptions] = useState<{ id: string; name: string }[]>([]);
   const [speed, setSpeed] = useState(1.0);
+  const [format, setFormat] = useState<AudioFormat>("wav");
+  const [mode, setMode] = useState<Mode>("single");
+  const [batchScripts, setBatchScripts] = useState("");
+  const [batchResults, setBatchResults] = useState<BatchItemResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<Generation[]>([]);
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
   const [minTextLength, setMinTextLength] = useState(1);
   const [maxTextLength, setMaxTextLength] = useState(800);
+  const [maxBatchItems, setMaxBatchItems] = useState(20);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [playSignal, setPlaySignal] = useState(0);
@@ -48,8 +49,13 @@ export default function StudioPage() {
   const [voiceSearch, setVoiceSearch] = useState("");
   const [lastError, setLastError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [presetName, setPresetName] = useState("");
+  const [showSavePreset, setShowSavePreset] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const voiceDropdownRef = useRef<HTMLDivElement>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -65,6 +71,11 @@ export default function StudioPage() {
   const trimmedLength = text.trim().length;
   const overLimit = charCount > maxTextLength;
   const canGenerate = configLoaded && trimmedLength >= minTextLength && !overLimit && !isGenerating && !!voiceId;
+
+  const batchItems = parseBatch(batchScripts);
+  const batchCount = batchItems.length;
+  const batchOverLimit = batchCount > maxBatchItems;
+  const canBatch = configLoaded && !isGenerating && !!voiceId && batchCount >= 1 && !batchOverLimit && batchItems.every((t) => t.length <= maxTextLength);
 
   let validationError: string | null = null;
   if (overLimit) validationError = `Text is over the ${maxTextLength}-character limit.`;
@@ -87,16 +98,24 @@ export default function StudioPage() {
     const data = await res.json();
     return (data.files || []) as Generation[];
   }
+  async function fetchPresets(): Promise<Preset[]> {
+    try {
+      const res = await apiFetch("/presets");
+      const data = await res.json();
+      return (data.presets || []) as Preset[];
+    } catch {
+      return [];
+    }
+  }
 
   useEffect(() => {
     let ignore = false;
-    const ocrText = searchParams.get("ocrText");
-    if (ocrText) { setText(ocrText); }
     fetchConfig().then((d) => {
       if (ignore) return;
       setVoiceOptions(d.voices);
       setMinTextLength(d.minTextLength);
       setMaxTextLength(d.maxTextLength);
+      if (d.maxBatchItems) setMaxBatchItems(d.maxBatchItems);
       setVoiceId((c) => c || d.voices[0]?.id || "");
       setConfigLoaded(true);
     }).catch(() => { if (!ignore) pushToast("error", "Could not reach the backend."); });
@@ -105,8 +124,11 @@ export default function StudioPage() {
       setHistory(items);
       setSelectedGeneration((c) => c || items[0] || null);
     }).catch(() => {});
+    fetchPresets().then((p) => {
+      if (ignore) return;
+      setPresets(p);
+    });
     return () => { ignore = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleGenerate() {
@@ -118,7 +140,7 @@ export default function StudioPage() {
       const res = await apiFetch("/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, voiceId, speed }),
+        body: JSON.stringify({ text, voiceId, speed, format }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -143,16 +165,117 @@ export default function StudioPage() {
     }
   }
 
-  async function handleDelete(filename: string) {
+  async function handleBatch() {
+    if (!canBatch) return;
+    setIsGenerating(true);
+    setBatchResults([]);
+    setLastError(null);
+    setShowSuccess(false);
     try {
-      const res = await apiFetch(`/audio/${encodeURIComponent(filename)}`, { method: "DELETE" });
-      if (!res.ok) throw new Error();
-      const remaining = history.filter((i) => i.filename !== filename);
-      setHistory(remaining);
-      if (selectedGeneration?.filename === filename) setSelectedGeneration(remaining[0] ?? null);
-      pushToast("success", "Generation deleted.");
+      const items = batchItems.map((t) => ({ text: t, voiceId, speed, format }));
+      const res = await apiFetch("/generate/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      const data = (await res.json()) as BatchResponse;
+      setBatchResults(data.results || []);
+      if (!res.ok) {
+        pushToast("error", data?.total === undefined ? "Batch generation failed." : "Batch generated with errors.");
+      } else {
+        pushToast("success", `Generated ${data.results?.filter((r) => r.success).length ?? 0} of ${data.total} files.`);
+      }
+      const updated = await fetchHistory();
+      setHistory(updated);
+      setSelectedGeneration((c) => c || updated[0] || null);
     } catch {
-      pushToast("error", "Something went wrong.");
+      setLastError("Unable to run batch generation.");
+      pushToast("error", "Unable to run batch generation.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }
+
+  async function handlePreviewVoice(id: string, e: React.MouseEvent) {
+    e.stopPropagation();
+    if (previewingVoice) return;
+    setPreviewingVoice(id);
+    try {
+      const res = await fetch(`${API_URL}/preview?voiceId=${encodeURIComponent(id)}&speed=1.0`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (!previewAudioRef.current) {
+        previewAudioRef.current = new Audio();
+      }
+      const audio = previewAudioRef.current;
+      audio.src = url;
+      audio.onended = () => setPreviewingVoice(null);
+      await audio.play();
+    } catch {
+      pushToast("error", "Preview unavailable for this voice.");
+    } finally {
+      // leave spinner until play ends; next click allowed once ended/failed
+      window.setTimeout(() => setPreviewingVoice((c) => (c === id ? null : c)), 3000);
+    }
+  }
+
+  async function handleSavePreset() {
+    const name = presetName.trim();
+    if (!name) { pushToast("error", "Enter a preset name."); return; }
+    try {
+      const res = await apiFetch("/presets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, voiceId, speed, format }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        pushToast("error", d?.detail || "Failed to save preset.");
+        return;
+      }
+      setPresetName("");
+      setShowSavePreset(false);
+      setPresets(await fetchPresets());
+      pushToast("success", "Preset saved.");
+    } catch {
+      pushToast("error", "Unable to save preset.");
+    }
+  }
+
+  async function handleApplyPreset(p: Preset) {
+    setVoiceId(p.voiceId);
+    setSpeed(p.speed);
+    setFormat(p.format);
+    pushToast("success", `Applied \u201c${p.name}\u201d.`);
+  }
+
+  async function handleDeletePreset(id: number, e: React.MouseEvent) {
+    e.stopPropagation();
+    try {
+      await apiFetch(`/presets/${id}`, { method: "DELETE" });
+      setPresets((c) => c.filter((p) => p.id !== id));
+      pushToast("success", "Preset deleted.");
+    } catch {
+      pushToast("error", "Unable to delete preset.");
+    }
+  }
+
+  async function handleDownloadSubtitles(gen: Generation) {
+    try {
+      const res = await apiFetch(`/generate/${encodeURIComponent(gen.filename)}/subtitles`);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = gen.filename.replace(/\.[^.]+$/, "") + ".srt";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      pushToast("error", "Subtitles unavailable for this file.");
     }
   }
 
@@ -163,6 +286,8 @@ export default function StudioPage() {
     : "";
 
   const selectedVoiceName = voiceOptions.find((v) => v.id === voiceId)?.name || "";
+  const selectedFormatLabel = FORMAT_LABELS[format];
+  const currentPresetApplied = !!presets.find((p) => p.voiceId === voiceId && p.speed === speed && p.format === format);
 
   return (
     <>
@@ -182,34 +307,162 @@ export default function StudioPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
         <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-[15px] font-semibold text-[#0B1739]">Script</h2>
-          <p className="mt-0.5 text-[12px] text-[#64748B]">Write, paste, or import your text</p>
-
-          <div className="relative mt-4">
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={8}
-              placeholder="Enter the text you want Voxa to speak..."
-              className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 pr-20 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
-                overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
-              }`}
-            />
-            <button type="button" className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-lg bg-[#2563EB] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]">
-              <span className="text-[10px]">&#10022;</span> AI assist
-            </button>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-[15px] font-semibold text-[#0B1739]">Script</h2>
+              <p className="mt-0.5 text-[12px] text-[#64748B]">Write, paste, or import your text</p>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg bg-[#EFF6FF] p-1">
+              {(["single", "batch"] as Mode[]).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMode(m)}
+                  className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
+                    mode === m ? "bg-white text-[#2563EB] shadow-sm" : "text-[#64748B] hover:text-[#2563EB]"
+                  }`}
+                >
+                  {m === "single" ? "Single" : "Batch"}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="mt-2 flex items-center justify-between">
-            <span className={`text-[11px] font-medium ${overLimit ? "text-[#FF6B6B]" : "text-[#64748B]"}`}>
-              {charCount} / {maxTextLength.toLocaleString()} characters
-            </span>
-            {validationError && <span className="text-[11px] font-medium text-[#FF6B6B]">{validationError}</span>}
-          </div>
+          {mode === "single" ? (
+            <>
+              <div className="relative mt-4">
+                <textarea
+                  ref={textareaRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={8}
+                  placeholder="Enter the text you want Voxa to speak..."
+                  className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 pr-20 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
+                    overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
+                  }`}
+                />
+                <button type="button" className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-lg bg-[#2563EB] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]">
+                  <span className="text-[10px]">&#10022;</span> AI assist
+                </button>
+              </div>
+
+              <div className="mt-2 flex items-center justify-between">
+                <span className={`text-[11px] font-medium ${overLimit ? "text-[#FF6B6B]" : "text-[#64748B]"}`}>
+                  {charCount} / {maxTextLength.toLocaleString()} characters
+                </span>
+                {validationError && <span className="text-[11px] font-medium text-[#FF6B6B]">{validationError}</span>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="relative mt-4">
+                <textarea
+                  value={batchScripts}
+                  onChange={(e) => setBatchScripts(e.target.value)}
+                  rows={9}
+                  placeholder={"One script per block, separated by a blank line:\n\nWelcome to Voxa.\nSpeak this second line.\n\nA third line here."}
+                  className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
+                    batchOverLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
+                  }`}
+                />
+              </div>
+
+              <div className="mt-2 flex items-center justify-between">
+                <span className={`text-[11px] font-medium ${batchOverLimit ? "text-[#FF6B6B]" : "text-[#64748B]"}`}>
+                  {batchCount} script{batchCount === 1 ? "" : "s"} &middot; max {maxBatchItems}
+                </span>
+                {batchOverLimit && <span className="text-[11px] font-medium text-[#FF6B6B]">Too many scripts for one batch.</span>}
+              </div>
+
+              {batchResults.length > 0 && !isGenerating && (
+                <div className="mt-4 space-y-2 border-t border-[#E2E8F0] pt-4">
+                  {batchResults.map((r) => (
+                    <div key={r.index} className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] px-4 py-2.5">
+                      <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
+                        r.success ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                      }`}>
+                        {r.success ? "\u2713" : "\u2715"}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#0B1739]">
+                        {r.success ? r.filename : r.error || "Failed"}
+                      </span>
+                      {r.success && (
+                        <span className="rounded bg-[#EFF6FF] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#2563EB] uppercase">
+                          {r.format}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
           <div className="mt-6 border-t border-[#E2E8F0] pt-5">
-            <h3 className="text-[13px] font-semibold text-[#0B1739]">Voice &amp; language</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13px] font-semibold text-[#0B1739]">Voice &amp; language</h3>
+              {voiceOptions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowSavePreset((v) => !v)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]"
+                >
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" /></svg>
+                  Save as preset
+                </button>
+              )}
+            </div>
+
+            {showSavePreset && (
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={presetName}
+                  onChange={(e) => setPresetName(e.target.value)}
+                  placeholder="e.g. Narrator warm"
+                  maxLength={60}
+                  className="min-w-0 flex-1 rounded-lg border border-[#E2E8F0] bg-[#EFF6FF] px-3 py-2 text-[13px] text-[#0B1739] placeholder:text-[#94A3B8] outline-none focus:border-[#2563EB]"
+                />
+                <button
+                  type="button"
+                  onClick={handleSavePreset}
+                  className="shrink-0 rounded-lg bg-[#2563EB] px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8]"
+                >
+                  Save
+                </button>
+              </div>
+            )}
+
+            {presets.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {presets.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleApplyPreset(p)}
+                    title={`${p.name} \u2014 ${p.voiceId}, ${p.speed}\u00d7, ${p.format.toUpperCase()}`}
+                    className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                      p.voiceId === voiceId && p.speed === speed && p.format === format
+                        ? "bg-[#2563EB] text-white"
+                        : "bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
+                    }`}
+                  >
+                    <svg className="h-3 w-3 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26" /></svg>
+                    {p.name}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => handleDeletePreset(p.id, e)}
+                      className="ml-0.5 rounded-full p-0.5 opacity-60 transition hover:bg-white/30 hover:opacity-100"
+                      title="Delete preset"
+                    >
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div className="relative mt-3" ref={voiceDropdownRef}>
               <button
                 type="button"
@@ -234,7 +487,7 @@ export default function StudioPage() {
                       autoFocus
                     />
                   </div>
-                  <div className="max-h-[220px] overflow-y-auto p-1">
+                  <div className="max-h-[240px] overflow-y-auto p-1">
                     {voiceOptions
                       .filter((v) => {
                         const q = voiceSearch.toLowerCase();
@@ -243,20 +496,36 @@ export default function StudioPage() {
                       .map((v) => {
                         const sel = v.id === voiceId;
                         return (
-                          <button
+                          <div
                             key={v.id}
-                            type="button"
+                            role="button"
+                            tabIndex={0}
                             onClick={() => { setVoiceId(v.id); setVoiceDropdownOpen(false); setVoiceSearch(""); }}
-                            className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setVoiceId(v.id); setVoiceDropdownOpen(false); setVoiceSearch(""); } }}
+                            className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${
                               sel ? "bg-[#EFF6FF] font-semibold text-[#2563EB]" : "text-[#0B1739] hover:bg-[#EFF6FF]"
                             }`}
                           >
                             <SpectrumBars size="sm" className={sel ? "text-[#2563EB]" : "text-[#93C5FD]"} />
-                            {v.name}
+                            <span className="flex-1">{v.name}</span>
+                            <button
+                              type="button"
+                              onClick={(e) => handlePreviewVoice(v.id, e)}
+                              title="Preview this voice"
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
+                                previewingVoice === v.id ? "bg-[#2563EB] text-white" : "bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
+                              }`}
+                            >
+                              {previewingVoice === v.id ? (
+                                <SpectrumBars size="sm" heights={[4, 8, 5, 10, 4]} animate className="text-white" />
+                              ) : (
+                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                              )}
+                            </button>
                             {sel && (
-                              <svg className="ml-auto h-3.5 w-3.5 shrink-0 text-[#2563EB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              <svg className="h-3.5 w-3.5 shrink-0 text-[#2563EB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                             )}
-                          </button>
+                          </div>
                         );
                       })}
                     {voiceOptions.filter((v) => {
@@ -301,35 +570,51 @@ export default function StudioPage() {
             </div>
 
             <div className="mt-5 border-t border-[#E2E8F0] pt-5">
-              <label className="text-[12px] font-semibold text-[#0B1739]">Output</label>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="rounded-lg bg-[#EFF6FF] px-3 py-1.5 text-[13px] font-semibold text-[#2563EB]">WAV audio</span>
+              <label className="text-[12px] font-semibold text-[#0B1739]">Output format</label>
+              <div className="mt-2.5 grid grid-cols-4 gap-1.5">
+                {(Object.keys(FORMAT_LABELS) as AudioFormat[]).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setFormat(f)}
+                    disabled={isGenerating}
+                    className={`rounded-xl py-2.5 text-[12px] font-semibold uppercase transition ${
+                      f === format ? "bg-[#2563EB] text-white shadow-sm" : "bg-[#EFF6FF] text-[#0B1739] hover:bg-[#DBEAFE]"
+                    } disabled:opacity-50`}
+                  >
+                    {FORMAT_LABELS[f]}
+                  </button>
+                ))}
               </div>
-              <p className="mt-1.5 text-[11px] text-[#64748B]">Local + Supabase cloud</p>
+              <p className="mt-1.5 text-[11px] text-[#64748B]">Local + Supabase cloud &middot; subtitles auto-generated</p>
             </div>
 
             <button
               type="button"
-              onClick={handleGenerate}
-              disabled={!canGenerate}
+              onClick={mode === "batch" ? handleBatch : handleGenerate}
+              disabled={mode === "batch" ? !canBatch : !canGenerate}
               className={`mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl py-3.5 text-[14px] font-semibold transition ${
                 isGenerating ? "cursor-wait bg-[#2563EB] text-white opacity-80"
-                  : !canGenerate ? "cursor-not-allowed bg-[#BFDBFE] text-[#64748B]"
+                  : (mode === "batch" ? !canBatch : !canGenerate) ? "cursor-not-allowed bg-[#BFDBFE] text-[#64748B]"
                   : "bg-[#2563EB] text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] hover:bg-[#1D4ED8] active:scale-[0.99]"
               }`}
             >
               {isGenerating ? (
                 <>
                   <SpectrumBars size="sm" heights={[4, 8, 5, 10, 4]} animate className="text-white" />
-                  Generating&hellip;
+                  {mode === "batch" ? "Generating batch&hellip;" : "Generating&hellip;"}
                 </>
               ) : (
                 <>
                   <SpectrumBars size="sm" className="text-white" />
-                  Generate speech
+                  {mode === "batch" ? "Generate batch" : "Generate speech"}
                 </>
               )}
             </button>
+
+            {currentPresetApplied && (
+              <p className="mt-2 text-center text-[11px] font-medium text-[#2563EB]">This combination matches a saved preset.</p>
+            )}
           </section>
 
           {isGenerating && (
@@ -339,7 +624,9 @@ export default function StudioPage() {
                   <SpectrumBars size="md" animate className="text-white" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#0B1739]">Generating audio&hellip;</p>
+                  <p className="text-[14px] font-semibold text-[#0B1739]">
+                    {mode === "batch" ? "Generating batch&hellip;" : "Generating audio&hellip;"}
+                  </p>
                   <p className="text-[12px] text-[#64748B]">Kokoro-82M is generating your audio&hellip;</p>
                 </div>
               </div>
@@ -357,7 +644,7 @@ export default function StudioPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-[13px] font-medium text-red-700">{lastError}</p>
-                  <button type="button" onClick={handleGenerate} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#FF6B6B] transition hover:text-red-700">
+                  <button type="button" onClick={mode === "batch" ? handleBatch : handleGenerate} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#FF6B6B] transition hover:text-red-700">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 4v6h6" />
                       <path d="M23 20v-6h-6" />
@@ -389,14 +676,25 @@ export default function StudioPage() {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className="rounded-lg bg-[#2563EB] px-2.5 py-1 text-[11px] font-semibold text-white">{selectedGeneration.voice}</span>
                 <span className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#2563EB]">{selectedGeneration.speed.toFixed(2)}&times;</span>
+                <span className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 font-mono text-[11px] font-semibold uppercase text-[#2563EB]">{selectedGeneration.format || "wav"}</span>
               </div>
               {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-[#0B1739] line-clamp-2">{selectedGeneration.text}</p>}
               <AudioPlayer src={audioUrl} autoPlay={playSignal > 0} playKey={playSignal} />
               <div className="mt-3 flex gap-2">
                 <a href={audioUrl} download={selectedGeneration.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                  Download WAV
+                  Download {selectedFormatLabel}
                 </a>
+                {selectedGeneration.has_subtitles && (
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadSubtitles(selectedGeneration)}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2.5 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#DBEAFE]"
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="10" y1="13" x2="14" y2="13" /><line x1="10" y1="17" x2="14" y2="17" /><line x1="8" y1="13" x2="6" y2="13" /><line x1="8" y1="17" x2="6" y2="17" /></svg>
+                    SRT
+                  </button>
+                )}
                 <Link href={`/app/history/${encodeURIComponent(selectedGeneration.filename)}`} className="flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]">
                   Details
                 </Link>
@@ -422,7 +720,7 @@ export default function StudioPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-semibold text-[#0B1739]">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
-                    <p className="text-[11px] text-[#64748B]">{item.voice} &middot; {item.speed}&times;</p>
+                    <p className="text-[11px] text-[#64748B]">{item.voice} &middot; {item.speed}&times; &middot; <span className="uppercase">{item.format || "wav"}</span></p>
                   </div>
                   <button type="button" onClick={() => { setSelectedGeneration(item); setPlaySignal((v) => v + 1); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white transition hover:bg-[#1D4ED8]" title="Play">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
@@ -440,4 +738,11 @@ export default function StudioPage() {
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
     </>
   );
+}
+
+function parseBatch(input: string): string[] {
+  return input
+    .split(/\n\s*\n/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
