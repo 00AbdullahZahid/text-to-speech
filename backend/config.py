@@ -7,7 +7,12 @@ STATIC_MOUNT_PATH = "/outputs"
 # API
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://voxa-speech.vercel.app",
+    "https://text-to-speech-ivory-mu.vercel.app",
 ]
+
+# Allow any Vercel deployment/preview (e.g. voxa-speech-*.vercel.app) to reach the API.
+ALLOWED_ORIGIN_REGEX = r"https://.*\.vercel\.app"
 
 # Audio
 SAMPLE_RATE = 24_000

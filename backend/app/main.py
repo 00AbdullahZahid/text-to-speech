@@ -21,7 +21,12 @@ from app.routers import ocr as ocr_router
 from app.routers import presets as presets_router
 from app.routers import preview as preview_router
 from app.routers import tts as tts_router
-from config import ALLOWED_ORIGINS, OUTPUTS_DIR, STATIC_MOUNT_PATH
+from config import (
+    ALLOWED_ORIGIN_REGEX,
+    ALLOWED_ORIGINS,
+    OUTPUTS_DIR,
+    STATIC_MOUNT_PATH,
+)
 from exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
@@ -52,6 +57,7 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=ALLOWED_ORIGINS,
+        allow_origin_regex=ALLOWED_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
