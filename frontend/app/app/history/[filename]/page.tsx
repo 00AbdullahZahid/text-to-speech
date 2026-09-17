@@ -6,6 +6,7 @@ import Link from "next/link";
 import { apiFetch, API_URL } from "../../../../lib/api";
 import { AudioPlayer } from "../../../../components/AudioPlayer";
 import { SpectrumBars } from "../../../../components/SpectrumBars";
+import { voiceName } from "../../../../lib/voices";
 
 type Generation = {
   filename: string;
@@ -39,7 +40,6 @@ export default function GenerationDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [playSignal, setPlaySignal] = useState(0);
 
   useEffect(() => {
     apiFetch(`/audio/${encodeURIComponent(filename)}`)
@@ -75,12 +75,12 @@ export default function GenerationDetailPage() {
     }
   }
 
-  if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-[#2563EB]" /></div>;
+  if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-primary" /></div>;
   if (!gen) return (
     <div className="mt-12 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#93C5FD]"><SpectrumBars size="md" /></div>
-      <p className="text-[14px] font-semibold text-[#0B1739]">Generation not found</p>
-      <Link href="/app/history" className="mt-3 inline-block text-[13px] font-semibold text-[#2563EB]">Back to history</Link>
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-soft text-primary-200"><SpectrumBars size="md" /></div>
+      <p className="text-[14px] font-semibold text-ink">Generation not found</p>
+      <Link href="/app/history" className="mt-3 inline-block text-[13px] font-semibold text-primary">Back to history</Link>
     </div>
   );
 
@@ -89,48 +89,51 @@ export default function GenerationDetailPage() {
   return (
     <>
       <div className="mb-6">
-        <Link href="/app/history" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#64748B] transition hover:text-[#2563EB]">
+        <Link href="/app/history" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted transition hover:text-primary">
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           Back to history
         </Link>
-        <h1 className="mt-3 font-display text-[24px] font-bold tracking-tight text-[#0B1739]">Generation Details</h1>
+        <h1 className="mt-3 font-display text-[24px] font-bold tracking-tight text-ink">Generation Details</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-[15px] font-semibold text-[#0B1739]">Audio</h2>
-            <AudioPlayer src={audioUrl} autoPlay={playSignal > 0} playKey={playSignal} />
-            <div className="mt-4 flex gap-2">
-              <a href={audioUrl} download={gen.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
+          <section className="rounded-2xl bg-surface p-6 shadow-sm">
+            <h2 className="mb-4 text-[15px] font-semibold text-ink">Audio</h2>
+            <AudioPlayer
+              src={audioUrl}
+              subtitlesPath={gen.has_subtitles ? `/generate/${encodeURIComponent(gen.filename)}/subtitles` : undefined}
+            />
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href={audioUrl} download={gen.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-deep py-2.5 text-[13px] font-semibold text-white transition hover:bg-deep dark:bg-primary dark:hover:bg-primary-strong">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                 Download {(gen.format || "wav").toUpperCase()}
               </a>
               {gen.has_subtitles && (
-                <button type="button" onClick={handleDownloadSubtitles} className="flex items-center justify-center gap-2 rounded-xl border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2.5 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#DBEAFE]">
+                <button type="button" onClick={handleDownloadSubtitles} className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-soft px-4 py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary-100">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="10" y1="13" x2="14" y2="13" /><line x1="10" y1="17" x2="14" y2="17" /><line x1="8" y1="13" x2="6" y2="13" /><line x1="8" y1="17" x2="6" y2="17" /></svg>
                   SRT
                 </button>
               )}
-              <button type="button" onClick={() => setShowDeleteModal(true)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-[#FF6B6B] transition hover:bg-red-50">
+              <button type="button" onClick={() => setShowDeleteModal(true)} className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-surface px-4 py-2.5 text-[13px] font-semibold text-error transition hover:bg-red-50 dark:border-red-800/50 dark:hover:bg-red-950/40">
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-2 14H7L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /></svg>
                 Delete
               </button>
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="mb-3 text-[15px] font-semibold text-[#0B1739]">Original text</h2>
-            <p className="text-[13px] leading-relaxed text-[#0B1739] whitespace-pre-wrap">{gen.text || "No text recorded."}</p>
+          <section className="rounded-2xl bg-surface p-6 shadow-sm">
+            <h2 className="mb-3 text-[15px] font-semibold text-ink">Original text</h2>
+            <p className="text-[13px] leading-relaxed text-ink whitespace-pre-wrap">{gen.text || "No text recorded."}</p>
           </section>
         </div>
 
         <div className="space-y-4">
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h3 className="mb-4 text-[13px] font-semibold text-[#0B1739]">Metadata</h3>
+          <section className="rounded-2xl bg-surface p-6 shadow-sm">
+            <h3 className="mb-4 text-[13px] font-semibold text-ink">Metadata</h3>
             <dl className="space-y-3">
               {[
-                ["Voice", gen.voice],
+                ["Voice", voiceName(gen.voice)],
                 ["Speed", `${gen.speed}\u00d7`],
                 ["File type", (gen.format || "wav").toUpperCase()],
                 ["Size", formatSize(gen.size)],
@@ -138,8 +141,8 @@ export default function GenerationDetailPage() {
                 ["Storage", gen.storage_path ? "Supabase + Local" : "Local only"],
               ].map(([label, value]) => (
                 <div key={label} className="flex items-center justify-between">
-                  <dt className="text-[12px] text-[#64748B]">{label}</dt>
-                  <dd className="text-[12px] font-medium text-[#0B1739]">{value}</dd>
+                  <dt className="text-[12px] text-muted">{label}</dt>
+                  <dd className="text-[12px] font-medium text-ink">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -149,12 +152,12 @@ export default function GenerationDetailPage() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowDeleteModal(false)}>
-          <div className="mx-4 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-[16px] font-bold text-[#0B1739]">Delete this generation?</h3>
-            <p className="mt-2 text-[13px] text-[#64748B]">This will remove the audio file and its metadata. This action cannot be undone.</p>
+          <div className="mx-4 w-full max-w-md rounded-2xl bg-surface p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-[16px] font-bold text-ink">Delete this generation?</h3>
+            <p className="mt-2 text-[13px] text-muted">This will remove the audio file and its metadata. This action cannot be undone.</p>
             <div className="mt-6 flex justify-end gap-2">
-              <button type="button" onClick={() => setShowDeleteModal(false)} className="rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB]">Cancel</button>
-              <button type="button" onClick={handleDelete} disabled={deleting} className="rounded-xl bg-[#FF6B6B] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">{deleting ? "Deleting\u2026" : "Delete"}</button>
+              <button type="button" onClick={() => setShowDeleteModal(false)} className="rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink transition hover:border-primary">Cancel</button>
+              <button type="button" onClick={handleDelete} disabled={deleting} className="rounded-xl bg-error px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">{deleting ? "Deleting\u2026" : "Delete"}</button>
             </div>
           </div>
         </div>

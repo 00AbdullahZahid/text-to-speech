@@ -7,11 +7,11 @@ import { SectionHeader } from "./SectionHeader";
 import { apiFetch } from "../lib/api";
 
 type OCRSectionProps = {
-  apiUrl: string;
+  apiUrl?: string;
   onUseExtractedText: (text: string) => void;
 };
 
-export function OCRSection({ apiUrl, onUseExtractedText }: OCRSectionProps) {
+export function OCRSection({ onUseExtractedText }: OCRSectionProps) {
   const [ocrText, setOcrText] = useState("");
   const [ocrLoading, setOcrLoading] = useState(false);
   const [extractionSuccess, setExtractionSuccess] = useState(false);

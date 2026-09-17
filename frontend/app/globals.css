@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #EFF6FF;
   --foreground: #0B1739;
@@ -15,11 +17,43 @@
   --warm: #F0C244;
 }
 
+.dark {
+  --background: #0B1739;
+  --foreground: #E8EEF9;
+  --surface: #14234A;
+  --surface-muted: #1D2E58;
+  --primary: #3B82F6;
+  --primary-strong: #2563EB;
+  --muted: #9FB0D1;
+  --border: #2A3D6B;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-body);
   --font-mono: var(--font-mono);
+  --color-canvas: var(--background);
+  --color-surface: var(--surface);
+  --color-soft: var(--surface-muted);
+  --color-ink: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: #94A3B8;
+  --color-line: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-accent: var(--warm);
+  --color-deep: var(--dark);
+  --color-error: var(--error);
+  --color-success: var(--success);
+}
+
+.dark {
+  --color-faint: #7C8DB1;
+  --color-primary-100: #24406F;
+  --color-primary-200: #2A4A85;
 }
 
 * {
@@ -48,6 +82,48 @@ body {
 
 .font-mono {
   font-family: var(--font-mono), "JetBrains Mono", ui-monospace, monospace;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--primary-strong);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px -2px rgba(15, 23, 42, 0.5);
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--primary-strong);
+  border: 3px solid #fff;
+  box-shadow: 0 2px 6px -2px rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 button,

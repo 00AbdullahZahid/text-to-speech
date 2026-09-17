@@ -7,6 +7,8 @@ import { AudioPlayer } from "../../components/AudioPlayer";
 import { ToastStack, type ToastItem } from "../../components/Toast";
 import { SpectrumBars } from "../../components/SpectrumBars";
 import { API_URL, apiFetch } from "../../lib/api";
+import { voiceName, voiceOptionsFallback } from "../../lib/voices";
+import { loadStudioDefaults } from "../../lib/theme";
 import type {
   AudioFormat,
   Generation,
@@ -16,7 +18,6 @@ import type {
   BatchResponse,
 } from "../../lib/types";
 
-const SPEED_OPTIONS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 const FORMAT_LABELS: Record<AudioFormat, string> = {
   wav: "WAV",
   mp3: "MP3",
@@ -110,15 +111,32 @@ export default function StudioPage() {
 
   useEffect(() => {
     let ignore = false;
+    const defaults = loadStudioDefaults();
     fetchConfig().then((d) => {
       if (ignore) return;
       setVoiceOptions(d.voices);
       setMinTextLength(d.minTextLength);
       setMaxTextLength(d.maxTextLength);
       if (d.maxBatchItems) setMaxBatchItems(d.maxBatchItems);
-      setVoiceId((c) => c || d.voices[0]?.id || "");
+      if (defaults?.voiceId && d.voices.some((v) => v.id === defaults.voiceId)) {
+        setVoiceId(defaults.voiceId);
+      } else {
+        setVoiceId((c) => c || d.voices[0]?.id || "");
+      }
+      if (typeof defaults?.speed === "number" && defaults.speed >= d.minSpeed && defaults.speed <= d.maxSpeed) {
+        setSpeed(defaults.speed);
+      }
+      if (defaults?.format && (Object.keys(FORMAT_LABELS) as AudioFormat[]).includes(defaults.format as AudioFormat)) {
+        setFormat(defaults.format as AudioFormat);
+      }
       setConfigLoaded(true);
-    }).catch(() => { if (!ignore) pushToast("error", "Could not reach the backend."); });
+    }).catch(() => {
+      if (ignore) return;
+      setVoiceOptions(voiceOptionsFallback());
+      setVoiceId((c) => c || voiceOptionsFallback()[0]?.id || "");
+      setConfigLoaded(true);
+      pushToast("error", "Could not reach the backend.");
+    });
     fetchHistory().then((items) => {
       if (ignore) return;
       setHistory(items);
@@ -285,7 +303,7 @@ export default function StudioPage() {
       : `${API_URL}/outputs/${selectedGeneration.filename}`
     : "";
 
-  const selectedVoiceName = voiceOptions.find((v) => v.id === voiceId)?.name || "";
+  const selectedVoiceName = voiceName(voiceId, voiceOptions);
   const selectedFormatLabel = FORMAT_LABELS[format];
   const currentPresetApplied = !!presets.find((p) => p.voiceId === voiceId && p.speed === speed && p.format === format);
 
@@ -293,10 +311,10 @@ export default function StudioPage() {
     <>
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[24px] font-bold tracking-tight text-[#0B1739]">TTS Studio</h1>
-          <p className="mt-1 text-[14px] text-[#64748B]">Create natural-sounding speech from text &mdash; or extract text from an image first.</p>
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">TTS Studio</h1>
+          <p className="mt-1 text-[14px] text-muted">Create natural-sounding speech from text &mdash; or extract text from an image first.</p>
         </div>
-        <div className="flex shrink-0 items-center gap-2 rounded-full bg-[#EFF6FF] px-4 py-2 text-[11px] font-semibold text-[#2563EB] shadow-sm ring-1 ring-[#2563EB]/15">
+        <div className="flex shrink-0 items-center gap-2 rounded-full bg-soft px-4 py-2 text-[11px] font-semibold text-primary shadow-sm ring-1 ring-primary/15">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
@@ -306,20 +324,20 @@ export default function StudioPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
-        <section className="rounded-2xl bg-white p-6 shadow-sm">
+        <section className="rounded-2xl bg-surface p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-[15px] font-semibold text-[#0B1739]">Script</h2>
-              <p className="mt-0.5 text-[12px] text-[#64748B]">Write, paste, or import your text</p>
+              <h2 className="text-[15px] font-semibold text-ink">Script</h2>
+              <p className="mt-0.5 text-[12px] text-muted">Write, paste, or import your text</p>
             </div>
-            <div className="flex items-center gap-1 rounded-lg bg-[#EFF6FF] p-1">
+            <div className="flex items-center gap-1 rounded-lg bg-soft p-1">
               {(["single", "batch"] as Mode[]).map((m) => (
                 <button
                   key={m}
                   type="button"
                   onClick={() => setMode(m)}
                   className={`rounded-md px-3 py-1.5 text-[12px] font-semibold transition ${
-                    mode === m ? "bg-white text-[#2563EB] shadow-sm" : "text-[#64748B] hover:text-[#2563EB]"
+                    mode === m ? "bg-surface text-primary shadow-sm" : "text-muted hover:text-primary"
                   }`}
                 >
                   {m === "single" ? "Single" : "Batch"}
@@ -337,20 +355,17 @@ export default function StudioPage() {
                   onChange={(e) => setText(e.target.value)}
                   rows={8}
                   placeholder="Enter the text you want Voxa to speak..."
-                  className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 pr-20 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
-                    overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
+                  className={`w-full resize-none rounded-xl border bg-soft p-4 text-[14px] leading-relaxed text-ink placeholder:text-faint transition focus:outline-none focus:ring-2 ${
+                    overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100 dark:border-red-800/60 dark:focus:border-red-400 dark:focus:ring-red-900/40" : "border-line focus:border-primary focus:ring-primary/15"
                   }`}
                 />
-                <button type="button" className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-lg bg-[#2563EB] px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8]">
-                  <span className="text-[10px]">&#10022;</span> AI assist
-                </button>
               </div>
 
               <div className="mt-2 flex items-center justify-between">
-                <span className={`text-[11px] font-medium ${overLimit ? "text-[#FF6B6B]" : "text-[#64748B]"}`}>
+                <span className={`text-[11px] font-medium ${overLimit ? "text-error" : "text-muted"}`}>
                   {charCount} / {maxTextLength.toLocaleString()} characters
                 </span>
-                {validationError && <span className="text-[11px] font-medium text-[#FF6B6B]">{validationError}</span>}
+                {validationError && <span className="text-[11px] font-medium text-error">{validationError}</span>}
               </div>
             </>
           ) : (
@@ -361,33 +376,33 @@ export default function StudioPage() {
                   onChange={(e) => setBatchScripts(e.target.value)}
                   rows={9}
                   placeholder={"One script per block, separated by a blank line:\n\nWelcome to Voxa.\nSpeak this second line.\n\nA third line here."}
-                  className={`w-full resize-none rounded-xl border bg-[#EFF6FF] p-4 text-[14px] leading-relaxed text-[#0B1739] placeholder:text-[#94A3B8] transition focus:outline-none focus:ring-2 ${
-                    batchOverLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100" : "border-[#E2E8F0] focus:border-[#2563EB] focus:ring-[#2563EB]/15"
+                  className={`w-full resize-none rounded-xl border bg-soft p-4 text-[14px] leading-relaxed text-ink placeholder:text-faint transition focus:outline-none focus:ring-2 ${
+                    batchOverLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100 dark:border-red-800/60 dark:focus:border-red-400 dark:focus:ring-red-900/40" : "border-line focus:border-primary focus:ring-primary/15"
                   }`}
                 />
               </div>
 
               <div className="mt-2 flex items-center justify-between">
-                <span className={`text-[11px] font-medium ${batchOverLimit ? "text-[#FF6B6B]" : "text-[#64748B]"}`}>
+                <span className={`text-[11px] font-medium ${batchOverLimit ? "text-error" : "text-muted"}`}>
                   {batchCount} script{batchCount === 1 ? "" : "s"} &middot; max {maxBatchItems}
                 </span>
-                {batchOverLimit && <span className="text-[11px] font-medium text-[#FF6B6B]">Too many scripts for one batch.</span>}
+                {batchOverLimit && <span className="text-[11px] font-medium text-error">Too many scripts for one batch.</span>}
               </div>
 
               {batchResults.length > 0 && !isGenerating && (
-                <div className="mt-4 space-y-2 border-t border-[#E2E8F0] pt-4">
+                <div className="mt-4 space-y-2 border-t border-line pt-4">
                   {batchResults.map((r) => (
-                    <div key={r.index} className="flex items-center gap-3 rounded-xl bg-[#F8FAFC] px-4 py-2.5">
+                    <div key={r.index} className="flex items-center gap-3 rounded-xl bg-soft px-4 py-2.5">
                       <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-                        r.success ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"
+                        r.success ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" : "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-300"
                       }`}>
                         {r.success ? "\u2713" : "\u2715"}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[#0B1739]">
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-ink">
                         {r.success ? r.filename : r.error || "Failed"}
                       </span>
                       {r.success && (
-                        <span className="rounded bg-[#EFF6FF] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#2563EB] uppercase">
+                        <span className="rounded bg-soft px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary uppercase">
                           {r.format}
                         </span>
                       )}
@@ -398,14 +413,14 @@ export default function StudioPage() {
             </>
           )}
 
-          <div className="mt-6 border-t border-[#E2E8F0] pt-5">
+          <div className="mt-6 border-t border-line pt-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-[13px] font-semibold text-[#0B1739]">Voice &amp; language</h3>
+              <h3 className="text-[13px] font-semibold text-ink">Voice &amp; language</h3>
               {voiceOptions.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowSavePreset((v) => !v)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary transition hover:text-primary-strong"
                 >
                   <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" /></svg>
                   Save as preset
@@ -421,12 +436,12 @@ export default function StudioPage() {
                   onChange={(e) => setPresetName(e.target.value)}
                   placeholder="e.g. Narrator warm"
                   maxLength={60}
-                  className="min-w-0 flex-1 rounded-lg border border-[#E2E8F0] bg-[#EFF6FF] px-3 py-2 text-[13px] text-[#0B1739] placeholder:text-[#94A3B8] outline-none focus:border-[#2563EB]"
+                  className="min-w-0 flex-1 rounded-lg border border-line bg-soft px-3 py-2 text-[13px] text-ink placeholder:text-faint outline-none focus:border-primary"
                 />
                 <button
                   type="button"
                   onClick={handleSavePreset}
-                  className="shrink-0 rounded-lg bg-[#2563EB] px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8]"
+                  className="shrink-0 rounded-lg bg-primary px-3 py-2 text-[12px] font-semibold text-white transition hover:bg-primary-strong"
                 >
                   Save
                 </button>
@@ -443,8 +458,8 @@ export default function StudioPage() {
                     title={`${p.name} \u2014 ${p.voiceId}, ${p.speed}\u00d7, ${p.format.toUpperCase()}`}
                     className={`group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
                       p.voiceId === voiceId && p.speed === speed && p.format === format
-                        ? "bg-[#2563EB] text-white"
-                        : "bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
+                        ? "bg-primary text-white"
+                        : "bg-soft text-primary hover:bg-primary-100"
                     }`}
                   >
                     <svg className="h-3 w-3 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26" /></svg>
@@ -467,23 +482,23 @@ export default function StudioPage() {
               <button
                 type="button"
                 onClick={() => setVoiceDropdownOpen(!voiceDropdownOpen)}
-                className="flex w-full items-center justify-between rounded-xl border border-[#E2E8F0] bg-[#EFF6FF] px-4 py-3 text-left transition hover:border-[#93C5FD] focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 focus:outline-none"
+                className="flex w-full items-center justify-between rounded-xl border border-line bg-soft px-4 py-3 text-left transition hover:border-primary-200 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none"
               >
-                <span className={`text-[14px] ${voiceId ? "font-medium text-[#0B1739]" : "text-[#94A3B8]"}`}>
+                <span className={`text-[14px] ${voiceId ? "font-medium text-ink" : "text-faint"}`}>
                   {selectedVoiceName || "Select a voice"}
                 </span>
-                <svg className={`h-4 w-4 shrink-0 text-[#64748B] transition-transform ${voiceDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                <svg className={`h-4 w-4 shrink-0 text-muted transition-transform ${voiceDropdownOpen ? "rotate-180" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
               </button>
 
               {voiceDropdownOpen && (
-                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-black/5">
-                  <div className="border-b border-[#E2E8F0] p-2">
+                <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl bg-surface shadow-lg ring-1 ring-black/5">
+                  <div className="border-b border-line p-2">
                     <input
                       type="text"
                       value={voiceSearch}
                       onChange={(e) => setVoiceSearch(e.target.value)}
                       placeholder="Search voices..."
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#EFF6FF] px-3 py-2 text-[13px] text-[#0B1739] placeholder:text-[#94A3B8] outline-none focus:border-[#2563EB]"
+                      className="w-full rounded-lg border border-line bg-soft px-3 py-2 text-[13px] text-ink placeholder:text-faint outline-none focus:border-primary"
                       autoFocus
                     />
                   </div>
@@ -503,17 +518,17 @@ export default function StudioPage() {
                             onClick={() => { setVoiceId(v.id); setVoiceDropdownOpen(false); setVoiceSearch(""); }}
                             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setVoiceId(v.id); setVoiceDropdownOpen(false); setVoiceSearch(""); } }}
                             className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13px] transition ${
-                              sel ? "bg-[#EFF6FF] font-semibold text-[#2563EB]" : "text-[#0B1739] hover:bg-[#EFF6FF]"
+                              sel ? "bg-soft font-semibold text-primary" : "text-ink hover:bg-soft"
                             }`}
                           >
-                            <SpectrumBars size="sm" className={sel ? "text-[#2563EB]" : "text-[#93C5FD]"} />
+                            <SpectrumBars size="sm" className={sel ? "text-primary" : "text-primary-200"} />
                             <span className="flex-1">{v.name}</span>
                             <button
                               type="button"
                               onClick={(e) => handlePreviewVoice(v.id, e)}
                               title="Preview this voice"
                               className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
-                                previewingVoice === v.id ? "bg-[#2563EB] text-white" : "bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
+                                previewingVoice === v.id ? "bg-primary text-white" : "bg-soft text-primary hover:bg-primary-100"
                               }`}
                             >
                               {previewingVoice === v.id ? (
@@ -523,7 +538,7 @@ export default function StudioPage() {
                               )}
                             </button>
                             {sel && (
-                              <svg className="h-3.5 w-3.5 shrink-0 text-[#2563EB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              <svg className="h-3.5 w-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                             )}
                           </div>
                         );
@@ -532,7 +547,7 @@ export default function StudioPage() {
                       const q = voiceSearch.toLowerCase();
                       return !q || v.name.toLowerCase().includes(q) || v.id.toLowerCase().includes(q);
                     }).length === 0 && (
-                      <p className="px-3 py-4 text-center text-[12px] text-[#94A3B8]">No voices match your search.</p>
+                      <p className="px-3 py-4 text-center text-[12px] text-faint">No voices match your search.</p>
                     )}
                   </div>
                 </div>
@@ -540,37 +555,41 @@ export default function StudioPage() {
             </div>
           </div>
 
-          <Link href="/app/ocr" className="mt-5 flex items-center gap-2 rounded-xl bg-[#EFF6FF] px-4 py-3 text-[12px] font-semibold text-[#64748B] transition hover:bg-[#DBEAFE] hover:text-[#2563EB]">
+          <Link href="/app/ocr" className="mt-5 flex items-center gap-2 rounded-xl bg-soft px-4 py-3 text-[12px] font-semibold text-muted transition hover:bg-primary-100 hover:text-primary">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="12" cy="13" r="3" /><path d="M16 3h-8v4" /></svg>
             Extract text from image &rarr;
           </Link>
         </section>
 
         <div className="flex flex-col gap-6">
-          <section className="rounded-2xl bg-white p-6 shadow-sm">
-            <h2 className="text-[15px] font-semibold text-[#0B1739]">Generation settings</h2>
+          <section className="rounded-2xl bg-surface p-6 shadow-sm">
+            <h2 className="text-[15px] font-semibold text-ink">Generation settings</h2>
 
             <div className="mt-5">
-              <label className="text-[12px] font-semibold text-[#0B1739]">Speed</label>
-              <div className="mt-2.5 grid grid-cols-6 gap-1.5">
-                {SPEED_OPTIONS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSpeed(s)}
-                    disabled={isGenerating}
-                    className={`rounded-xl py-2.5 text-[12px] font-semibold transition ${
-                      s === speed ? "bg-[#F0C244] text-[#0B1739] shadow-sm" : "bg-[#EFF6FF] text-[#0B1739] hover:bg-[#DBEAFE]"
-                    } disabled:opacity-50`}
-                  >
-                    {s}&times;
-                  </button>
-                ))}
+              <div className="flex items-center justify-between">
+                <label className="text-[12px] font-semibold text-ink">Speed</label>
+                <span className="rounded-lg bg-accent px-2.5 py-1 font-mono text-[11px] font-semibold text-ink">{speed.toFixed(2)}&times;</span>
+              </div>
+              <input
+                type="range"
+                min={0.5}
+                max={1.5}
+                step={0.05}
+                value={speed}
+                disabled={isGenerating}
+                onChange={(e) => setSpeed(Number(e.target.value))}
+                className="mt-3 disabled:opacity-50"
+                aria-label="Speed"
+              />
+              <div className="mt-1.5 flex justify-between text-[10px] font-medium text-muted">
+                <span>0.5&times;</span>
+                <span>Normal</span>
+                <span>1.5&times;</span>
               </div>
             </div>
 
-            <div className="mt-5 border-t border-[#E2E8F0] pt-5">
-              <label className="text-[12px] font-semibold text-[#0B1739]">Output format</label>
+            <div className="mt-5 border-t border-line pt-5">
+              <label className="text-[12px] font-semibold text-ink">Output format</label>
               <div className="mt-2.5 grid grid-cols-4 gap-1.5">
                 {(Object.keys(FORMAT_LABELS) as AudioFormat[]).map((f) => (
                   <button
@@ -579,14 +598,14 @@ export default function StudioPage() {
                     onClick={() => setFormat(f)}
                     disabled={isGenerating}
                     className={`rounded-xl py-2.5 text-[12px] font-semibold uppercase transition ${
-                      f === format ? "bg-[#2563EB] text-white shadow-sm" : "bg-[#EFF6FF] text-[#0B1739] hover:bg-[#DBEAFE]"
+                      f === format ? "bg-primary text-white shadow-sm" : "bg-soft text-ink hover:bg-primary-100"
                     } disabled:opacity-50`}
                   >
                     {FORMAT_LABELS[f]}
                   </button>
                 ))}
               </div>
-              <p className="mt-1.5 text-[11px] text-[#64748B]">Local + Supabase cloud &middot; subtitles auto-generated</p>
+              <p className="mt-1.5 text-[11px] text-muted">Local + Supabase cloud &middot; subtitles auto-generated</p>
             </div>
 
             <button
@@ -594,9 +613,9 @@ export default function StudioPage() {
               onClick={mode === "batch" ? handleBatch : handleGenerate}
               disabled={mode === "batch" ? !canBatch : !canGenerate}
               className={`mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl py-3.5 text-[14px] font-semibold transition ${
-                isGenerating ? "cursor-wait bg-[#2563EB] text-white opacity-80"
-                  : (mode === "batch" ? !canBatch : !canGenerate) ? "cursor-not-allowed bg-[#BFDBFE] text-[#64748B]"
-                  : "bg-[#2563EB] text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] hover:bg-[#1D4ED8] active:scale-[0.99]"
+                isGenerating ? "cursor-wait bg-primary text-white opacity-80"
+                  : (mode === "batch" ? !canBatch : !canGenerate) ? "cursor-not-allowed bg-primary-200 text-muted"
+                  : "bg-primary text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] hover:bg-primary-strong active:scale-[0.99]"
               }`}
             >
               {isGenerating ? (
@@ -613,38 +632,38 @@ export default function StudioPage() {
             </button>
 
             {currentPresetApplied && (
-              <p className="mt-2 text-center text-[11px] font-medium text-[#2563EB]">This combination matches a saved preset.</p>
+              <p className="mt-2 text-center text-[11px] font-medium text-primary">This combination matches a saved preset.</p>
             )}
           </section>
 
           {isGenerating && (
-            <section className="rounded-2xl bg-[#EFF6FF] p-5 ring-1 ring-[#2563EB]/10">
+            <section className="rounded-2xl bg-soft p-5 ring-1 ring-primary/10">
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#2563EB]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary">
                   <SpectrumBars size="md" animate className="text-white" />
                 </div>
                 <div>
-                  <p className="text-[14px] font-semibold text-[#0B1739]">
+                  <p className="text-[14px] font-semibold text-ink">
                     {mode === "batch" ? "Generating batch&hellip;" : "Generating audio&hellip;"}
                   </p>
-                  <p className="text-[12px] text-[#64748B]">Kokoro-82M is generating your audio&hellip;</p>
+                  <p className="text-[12px] text-muted">Kokoro-82M is generating your audio&hellip;</p>
                 </div>
               </div>
             </section>
           )}
 
           {lastError && !isGenerating && (
-            <section className="rounded-2xl border border-red-200 bg-red-50 p-5">
+            <section className="rounded-2xl border border-red-200 bg-red-50 p-5 dark:border-red-800/50 dark:bg-red-950/30">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
-                  <svg className="h-5 w-5 text-[#FF6B6B]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/50">
+                  <svg className="h-5 w-5 text-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 8v4m0 4h.01" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-[13px] font-medium text-red-700">{lastError}</p>
-                  <button type="button" onClick={mode === "batch" ? handleBatch : handleGenerate} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#FF6B6B] transition hover:text-red-700">
+                  <p className="text-[13px] font-medium text-red-700 dark:text-red-300">{lastError}</p>
+                  <button type="button" onClick={mode === "batch" ? handleBatch : handleGenerate} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-error transition hover:text-red-700 dark:hover:text-red-400">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 4v6h6" />
                       <path d="M23 20v-6h-6" />
@@ -658,30 +677,35 @@ export default function StudioPage() {
           )}
 
           {showSuccess && !isGenerating && (
-            <section className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200">
+            <section className="rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200 dark:bg-emerald-950/30 dark:ring-emerald-800/50">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                  <svg className="h-4 w-4 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50">
+                  <svg className="h-4 w-4 text-emerald-600 dark:text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <p className="text-[13px] font-medium text-emerald-700">Audio generated successfully</p>
+                <p className="text-[13px] font-medium text-emerald-700 dark:text-emerald-300">Audio generated successfully</p>
               </div>
             </section>
           )}
 
           {selectedGeneration && (
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-[15px] font-semibold text-[#0B1739]">Playback</h2>
+            <section className="rounded-2xl bg-surface p-6 shadow-sm">
+              <h2 className="mb-4 text-[15px] font-semibold text-ink">Playback</h2>
               <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="rounded-lg bg-[#2563EB] px-2.5 py-1 text-[11px] font-semibold text-white">{selectedGeneration.voice}</span>
-                <span className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 font-mono text-[11px] font-semibold text-[#2563EB]">{selectedGeneration.speed.toFixed(2)}&times;</span>
-                <span className="rounded-lg bg-[#EFF6FF] px-2.5 py-1 font-mono text-[11px] font-semibold uppercase text-[#2563EB]">{selectedGeneration.format || "wav"}</span>
+                <span className="rounded-lg bg-primary px-2.5 py-1 text-[11px] font-semibold text-white">{voiceName(selectedGeneration.voice, voiceOptions)}</span>
+                <span className="rounded-lg bg-soft px-2.5 py-1 font-mono text-[11px] font-semibold text-primary">{selectedGeneration.speed.toFixed(2)}&times;</span>
+                <span className="rounded-lg bg-soft px-2.5 py-1 font-mono text-[11px] font-semibold uppercase text-primary">{selectedGeneration.format || "wav"}</span>
               </div>
-              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-[#0B1739] line-clamp-2">{selectedGeneration.text}</p>}
-              <AudioPlayer src={audioUrl} autoPlay={playSignal > 0} playKey={playSignal} />
+              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-ink line-clamp-2">{selectedGeneration.text}</p>}
+              <AudioPlayer
+                src={audioUrl}
+                autoPlay={playSignal > 0}
+                playKey={playSignal}
+                subtitlesPath={selectedGeneration.has_subtitles ? `/generate/${encodeURIComponent(selectedGeneration.filename)}/subtitles` : undefined}
+              />
               <div className="mt-3 flex gap-2">
-                <a href={audioUrl} download={selectedGeneration.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#0B1739] py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#0F172A]">
+                <a href={audioUrl} download={selectedGeneration.filename} className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-deep py-2.5 text-[13px] font-semibold text-white transition hover:bg-deep dark:bg-primary dark:hover:bg-primary-strong">
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   Download {selectedFormatLabel}
                 </a>
@@ -689,13 +713,13 @@ export default function StudioPage() {
                   <button
                     type="button"
                     onClick={() => handleDownloadSubtitles(selectedGeneration)}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-[#2563EB]/20 bg-[#EFF6FF] px-4 py-2.5 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#DBEAFE]"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-soft px-4 py-2.5 text-[13px] font-semibold text-primary transition hover:bg-primary-100"
                   >
                     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="10" y1="13" x2="14" y2="13" /><line x1="10" y1="17" x2="14" y2="17" /><line x1="8" y1="13" x2="6" y2="13" /><line x1="8" y1="17" x2="6" y2="17" /></svg>
                     SRT
                   </button>
                 )}
-                <Link href={`/app/history/${encodeURIComponent(selectedGeneration.filename)}`} className="flex items-center justify-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]">
+                <Link href={`/app/history/${encodeURIComponent(selectedGeneration.filename)}`} className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-[13px] font-semibold text-ink transition hover:border-primary hover:text-primary">
                   Details
                 </Link>
               </div>
@@ -707,25 +731,25 @@ export default function StudioPage() {
       {history.length > 0 && (
         <section className="mt-8">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-[15px] font-semibold text-[#0B1739]">Recent generations</h2>
-            <Link href="/app/history" className="text-[12px] font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]">View history &rarr;</Link>
+            <h2 className="text-[15px] font-semibold text-ink">Recent generations</h2>
+            <Link href="/app/history" className="text-[12px] font-semibold text-primary transition hover:text-primary-strong">View history &rarr;</Link>
           </div>
           <div className="space-y-2.5">
             {history.slice(0, 3).map((item) => {
               const dl = item.audio_url?.startsWith("http") ? item.audio_url : `${API_URL}/outputs/${item.filename}`;
               return (
-                <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-white px-5 py-3.5 shadow-sm transition hover:shadow-md">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EFF6FF] text-[#2563EB]">
+                <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-surface px-5 py-3.5 shadow-sm transition hover:shadow-md">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-soft text-primary">
                     <SpectrumBars size="sm" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-[#0B1739]">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
-                    <p className="text-[11px] text-[#64748B]">{item.voice} &middot; {item.speed}&times; &middot; <span className="uppercase">{item.format || "wav"}</span></p>
+                    <p className="truncate text-[13px] font-semibold text-ink">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
+                    <p className="text-[11px] text-muted">{voiceName(item.voice, voiceOptions)} &middot; {item.speed}&times; &middot; <span className="uppercase">{item.format || "wav"}</span></p>
                   </div>
-                  <button type="button" onClick={() => { setSelectedGeneration(item); setPlaySignal((v) => v + 1); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563EB] text-white transition hover:bg-[#1D4ED8]" title="Play">
+                  <button type="button" onClick={() => { setSelectedGeneration(item); setPlaySignal((v) => v + 1); }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-strong" title="Play">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                   </button>
-                  <a href={dl} download={item.filename} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#EFF6FF] text-[#2563EB] transition hover:bg-[#DBEAFE]" title="Download">
+                  <a href={dl} download={item.filename} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-soft text-primary transition hover:bg-primary-100" title="Download">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   </a>
                 </div>

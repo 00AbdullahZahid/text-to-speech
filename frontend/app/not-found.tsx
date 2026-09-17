@@ -26,24 +26,24 @@ export default function NotFound() {
             </Link>
 
             <nav className="hidden items-center gap-8 md:flex">
-              <a
+              <Link
                 href="/#features"
                 className="text-[13px] font-medium text-white/70 transition hover:text-white"
               >
                 Features
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#how-it-works"
                 className="text-[13px] font-medium text-white/70 transition hover:text-white"
               >
                 How it works
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#languages"
                 className="text-[13px] font-medium text-white/70 transition hover:text-white"
               >
                 Languages
-              </a>
+              </Link>
             </nav>
 
             <div className="hidden items-center gap-4 md:flex">

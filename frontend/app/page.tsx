@@ -7,7 +7,6 @@ const NAVY = "#0B1739";
 const BLUE = "#2563EB";
 const White = "#ffffff";
 const BLUE_LIGHT = "#EFF6FF";
-const DARK_TEXT = "#0F172A";
 
 const FEATURES = [
   {
@@ -71,17 +70,6 @@ const STEPS = [
     title: "Generate & listen",
     desc: "Voxa\u2019s AI creates your WAV audio for playback and download.",
   },
-];
-
-const LANGUAGES = [
-  { name: "English", flag: "🇬🇧" },
-  { name: "Spanish", flag: "🇪🇸" },
-  { name: "French", flag: "🇫🇷" },
-  { name: "Hindi", flag: "🇮🇳" },
-  { name: "Japanese", flag: "🇯🇵" },
-  { name: "Portuguese", flag: "🇵🇹" },
-  { name: "Chinese", flag: "🇨🇳" },
-  { name: "Afrikaans", flag: "🇿🇦" },
 ];
 
 export default function LandingPage() {

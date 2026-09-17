@@ -93,10 +93,10 @@ export default function OcrPage() {
     <>
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="mb-8">
-        <h1 className="font-display text-[24px] font-bold tracking-tight text-[#0B1739]">
+        <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">
           Image OCR
         </h1>
-        <p className="mt-1 text-[14px] text-[#64748B]">
+        <p className="mt-1 text-[14px] text-muted">
           Review extracted text before sending it to the TTS studio.
         </p>
       </div>
@@ -120,8 +120,8 @@ export default function OcrPage() {
             onDrop={handleDrop}
             className={`flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed transition ${
               dragOver
-                ? "border-[#2563EB] bg-[#EFF6FF]"
-                : "border-[#BFDBFE] bg-white hover:border-[#93C5FD] hover:bg-[#EFF6FF]"
+                ? "border-primary bg-soft"
+                : "border-primary-200 bg-surface hover:border-primary-200 hover:bg-soft"
             }`}
           >
             <input
@@ -131,15 +131,15 @@ export default function OcrPage() {
               onChange={handleFileChange}
               className="hidden"
             />
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EFF6FF] text-[#2563EB]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-soft text-primary">
               <SpectrumBars size="lg" />
             </div>
             <div className="text-center">
-              <p className="text-[15px] font-semibold text-[#0B1739]">
+              <p className="text-[15px] font-semibold text-ink">
                 Drop an image here or{" "}
-                <span className="text-[#2563EB]">browse</span>
+                <span className="text-primary">browse</span>
               </p>
-              <p className="mt-1.5 text-[13px] text-[#64748B]">
+              <p className="mt-1.5 text-[13px] text-muted">
                 PNG, JPG, WEBP &middot; text is extracted automatically
               </p>
             </div>
@@ -150,11 +150,11 @@ export default function OcrPage() {
       {/* ── Uploading State (file selected, about to send) ── */}
       {state === "uploading" && (
         <div className="fade-in">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               {/* Left: Image Preview */}
               <div className="flex flex-col items-center gap-3">
-                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[#F0F7FF] p-4" style={{ minHeight: 240 }}>
+                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-soft p-4" style={{ minHeight: 240 }}>
                   {image && (
                     <img
                       src={image}
@@ -164,8 +164,8 @@ export default function OcrPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2563EB]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Image preview
                   </span>
                 </div>
@@ -173,21 +173,21 @@ export default function OcrPage() {
 
               {/* Right: Preparing */}
               <div className="flex flex-col items-center justify-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EFF6FF]">
-                  <SpectrumBars size="lg" className="text-[#2563EB]" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-soft">
+                  <SpectrumBars size="lg" className="text-primary" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[15px] font-semibold text-[#0B1739]">
+                  <p className="text-[15px] font-semibold text-ink">
                     Image loaded
                   </p>
-                  <p className="mt-1 text-[12px] text-[#64748B]">
+                  <p className="mt-1 text-[12px] text-muted">
                     {imageName}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleExtract}
-                  className="mt-2 flex items-center gap-2 rounded-xl bg-[#2563EB] px-6 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8] active:scale-[0.98]"
+                  className="mt-2 flex items-center gap-2 rounded-xl bg-primary px-6 py-3 text-[13px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-primary-strong active:scale-[0.98]"
                 >
                   <svg
                     className="h-4 w-4"
@@ -206,7 +206,7 @@ export default function OcrPage() {
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="text-[12px] font-medium text-[#64748B] transition hover:text-[#0B1739]"
+                  className="text-[12px] font-medium text-muted transition hover:text-ink"
                 >
                   Choose a different image
                 </button>
@@ -219,11 +219,11 @@ export default function OcrPage() {
       {/* ── Processing State ───────────────────────────────── */}
       {state === "processing" && (
         <div className="fade-in">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               {/* Left: Image Preview */}
               <div className="flex flex-col items-center gap-3">
-                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[#F0F7FF] p-4" style={{ minHeight: 240 }}>
+                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-soft p-4" style={{ minHeight: 240 }}>
                   {image && (
                     <img
                       src={image}
@@ -233,8 +233,8 @@ export default function OcrPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#2563EB]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Image preview
                   </span>
                 </div>
@@ -242,18 +242,18 @@ export default function OcrPage() {
 
               {/* Right: Processing */}
               <div className="flex flex-col items-center justify-center gap-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#EFF6FF]">
-                  <SpectrumBars size="xl" animate className="text-[#2563EB]" />
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-soft">
+                  <SpectrumBars size="xl" animate className="text-primary" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[16px] font-semibold text-[#0B1739]">
+                  <p className="text-[16px] font-semibold text-ink">
                     Analyzing image&hellip;
                   </p>
-                  <p className="mt-1.5 text-[12px] text-[#64748B]">
+                  <p className="mt-1.5 text-[12px] text-muted">
                     Qwen2.5-VL-3B-Instruct is reading your image
                   </p>
                 </div>
-                <div className="flex items-center gap-2 text-[12px] text-[#94A3B8]">
+                <div className="flex items-center gap-2 text-[12px] text-faint">
                   <svg
                     className="h-3.5 w-3.5 animate-spin"
                     viewBox="0 0 24 24"
@@ -285,11 +285,11 @@ export default function OcrPage() {
       {/* ── Error State ────────────────────────────────────── */}
       {state === "error" && (
         <div className="fade-in">
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
               {/* Left: Image Preview */}
               <div className="flex flex-col items-center gap-3">
-                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-[#F0F7FF] p-4" style={{ minHeight: 240 }}>
+                <div className="relative flex w-full items-center justify-center overflow-hidden rounded-xl bg-soft p-4" style={{ minHeight: 240 }}>
                   {image && (
                     <img
                       src={image}
@@ -299,8 +299,8 @@ export default function OcrPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FF6B6B]" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-[#64748B]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-error" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Image preview
                   </span>
                 </div>
@@ -308,9 +308,9 @@ export default function OcrPage() {
 
               {/* Right: Error */}
               <div className="flex flex-col items-center justify-center gap-5">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40">
                   <svg
-                    className="h-8 w-8 text-[#FF6B6B]"
+                    className="h-8 w-8 text-error"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -323,10 +323,10 @@ export default function OcrPage() {
                   </svg>
                 </div>
                 <div className="text-center">
-                  <p className="text-[16px] font-semibold text-[#0B1739]">
+                  <p className="text-[16px] font-semibold text-ink">
                     Extraction failed
                   </p>
-                  <p className="mt-1.5 max-w-[320px] text-[13px] leading-relaxed text-[#64748B]">
+                  <p className="mt-1.5 max-w-[320px] text-[13px] leading-relaxed text-muted">
                     {error}
                   </p>
                 </div>
@@ -334,7 +334,7 @@ export default function OcrPage() {
                   <button
                     type="button"
                     onClick={handleRetry}
-                    className="flex items-center gap-2 rounded-xl bg-[#2563EB] px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-[#1D4ED8] active:scale-[0.98]"
+                    className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-primary-strong active:scale-[0.98]"
                   >
                     <svg
                       className="h-4 w-4"
@@ -354,7 +354,7 @@ export default function OcrPage() {
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="rounded-xl border border-[#E2E8F0] bg-white px-5 py-2.5 text-[13px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+                    className="rounded-xl border border-line bg-surface px-5 py-2.5 text-[13px] font-semibold text-ink transition hover:border-primary hover:text-primary"
                   >
                     New image
                   </button>
@@ -369,10 +369,10 @@ export default function OcrPage() {
       {state === "result" && (
         <div className="fade-in">
           {/* Success banner */}
-          <div className="mb-5 flex items-center gap-3 rounded-2xl bg-emerald-50 px-5 py-3.5 ring-1 ring-emerald-200">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+          <div className="mb-5 flex items-center gap-3 rounded-2xl bg-emerald-50 px-5 py-3.5 ring-1 ring-emerald-200 dark:bg-emerald-950/30 dark:ring-emerald-800/50">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/50">
               <svg
-                className="h-4 w-4 text-emerald-600"
+                className="h-4 w-4 text-emerald-600 dark:text-emerald-300"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -384,24 +384,24 @@ export default function OcrPage() {
               </svg>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-emerald-800">
+              <p className="text-[14px] font-semibold text-emerald-800 dark:text-emerald-200">
                 Extraction complete
               </p>
-              <p className="text-[12px] text-emerald-600">
+              <p className="text-[12px] text-emerald-600 dark:text-emerald-400">
                 Text successfully extracted
               </p>
             </div>
           </div>
 
           {/* Main card */}
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-surface p-6 shadow-sm">
             <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
               {/* Left: Image Preview */}
               <div className="flex flex-col gap-3">
-                <h3 className="text-[13px] font-semibold text-[#0B1739]">
+                <h3 className="text-[13px] font-semibold text-ink">
                   Image Preview
                 </h3>
-                <div className="flex items-center justify-center overflow-hidden rounded-xl bg-[#F0F7FF] p-4" style={{ minHeight: 280 }}>
+                <div className="flex items-center justify-center overflow-hidden rounded-xl bg-soft p-4" style={{ minHeight: 280 }}>
                   {image && (
                     <img
                       src={image}
@@ -410,7 +410,7 @@ export default function OcrPage() {
                     />
                   )}
                 </div>
-                <p className="text-center text-[11px] text-[#94A3B8]">
+                <p className="text-center text-[11px] text-faint">
                   {imageName}
                 </p>
               </div>
@@ -418,10 +418,10 @@ export default function OcrPage() {
               {/* Right: Extracted Text */}
               <div className="flex flex-col">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-[13px] font-semibold text-[#0B1739]">
+                  <h3 className="text-[13px] font-semibold text-ink">
                     Extracted text
                   </h3>
-                  <span className="rounded-md bg-[#EFF6FF] px-2 py-0.5 text-[11px] font-semibold text-[#2563EB]">
+                  <span className="rounded-md bg-soft px-2 py-0.5 text-[11px] font-semibold text-primary">
                     {ocrText.length} characters
                   </span>
                 </div>
@@ -429,14 +429,14 @@ export default function OcrPage() {
                   value={ocrText}
                   onChange={(e) => setOcrText(e.target.value)}
                   rows={14}
-                  className="mt-3 w-full resize-none rounded-xl border border-[#E2E8F0] bg-[#EFF6FF] p-4 text-[13px] leading-relaxed text-[#0B1739] outline-none transition focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15"
+                  className="mt-3 w-full resize-none rounded-xl border border-line bg-soft p-4 text-[13px] leading-relaxed text-ink outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 />
 
                 <div className="mt-4 flex flex-col gap-2.5">
                   <button
                     type="button"
                     onClick={handleContinueToTTS}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2563EB] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8] active:scale-[0.99]"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-primary-strong active:scale-[0.99]"
                   >
                     Send extracted text to TTS
                     <svg
@@ -456,7 +456,7 @@ export default function OcrPage() {
                     <button
                       type="button"
                       onClick={() => navigator.clipboard.writeText(ocrText)}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white py-2.5 text-[12px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface py-2.5 text-[12px] font-semibold text-ink transition hover:border-primary hover:text-primary"
                     >
                       <svg
                         className="h-3.5 w-3.5"
@@ -475,7 +475,7 @@ export default function OcrPage() {
                     <button
                       type="button"
                       onClick={handleExtract}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white py-2.5 text-[12px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface py-2.5 text-[12px] font-semibold text-ink transition hover:border-primary hover:text-primary"
                     >
                       <svg
                         className="h-3.5 w-3.5"
@@ -495,7 +495,7 @@ export default function OcrPage() {
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white py-2.5 text-[12px] font-semibold text-[#0B1739] transition hover:border-[#2563EB] hover:text-[#2563EB]"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface py-2.5 text-[12px] font-semibold text-ink transition hover:border-primary hover:text-primary"
                     >
                       <svg
                         className="h-3.5 w-3.5"

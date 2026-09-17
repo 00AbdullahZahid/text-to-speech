@@ -5,22 +5,42 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "../lib/auth";
 import { SpectrumBars } from "./SpectrumBars";
+import { ThemeToggle } from "./ThemeToggle";
+
+export type NavItem = {
+  href: string;
+  label: string;
+  active: boolean;
+  title?: string;
+  icon: React.ReactNode;
+};
+
+export function BrandLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/app" className="flex items-center gap-3" title="Voxa">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB]">
+        <span className="font-display text-sm font-bold text-white">V</span>
+      </div>
+      {!compact && (
+        <div>
+          <span className="font-display text-[17px] font-bold tracking-tight text-white">Voxa</span>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">AI Text-to-Speech</p>
+        </div>
+      )}
+    </Link>
+  );
+}
 
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
   const [email, setEmail] = useState("");
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && localStorage.getItem("voxa-sidebar-collapsed") === "true");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
   }, [supabase]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("voxa-sidebar-collapsed");
-    if (saved === "true") setCollapsed(true);
-  }, []);
 
   function toggleCollapsed() {
     setCollapsed((c) => {
@@ -35,11 +55,13 @@ export function Sidebar() {
     router.push("/login");
   }
 
-  const navItems = [
+  const isHrefActive = (href: string) => (href === "/app" ? pathname === "/app" : pathname.startsWith(href));
+
+  const navItems: NavItem[] = [
     {
       href: "/app",
       label: "TTS Studio",
-      active: pathname === "/app",
+      active: isHrefActive("/app"),
       icon: (
         <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" />
@@ -51,7 +73,7 @@ export function Sidebar() {
     {
       href: "/app/ocr",
       label: "Image OCR",
-      active: pathname === "/app/ocr",
+      active: isHrefActive("/app/ocr"),
       icon: (
         <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -63,7 +85,7 @@ export function Sidebar() {
     {
       href: "/app/history",
       label: "Generation History",
-      active: pathname.startsWith("/app/history"),
+      active: isHrefActive("/app/history"),
       icon: (
         <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10" />
@@ -74,20 +96,10 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className={`flex h-full shrink-0 flex-col bg-[#0B1739] transition-all duration-200 ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
+    <aside className={`hidden h-full shrink-0 flex-col bg-[#0B1739] transition-all duration-200 lg:flex ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
       {/* Logo */}
       <div className={`pb-7 pt-6 ${collapsed ? "px-3 flex justify-center" : "px-5"}`}>
-        <Link href="/app" className="flex items-center gap-3" title="Voxa">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#2563EB]">
-            <span className="font-display text-sm font-bold text-white">V</span>
-          </div>
-          {!collapsed && (
-            <div>
-              <span className="font-display text-[17px] font-bold tracking-tight text-white">Voxa</span>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/40">AI Text-to-Speech</p>
-            </div>
-          )}
-        </Link>
+        <BrandLogo compact={collapsed} />
       </div>
 
       {/* Navigation */}
@@ -158,6 +170,16 @@ export function Sidebar() {
             </button>
           </li>
         </ul>
+      </div>
+
+      {/* Appearance */}
+      <div className={`mb-1 border-t border-white/[0.06] ${collapsed ? "px-2 py-2" : "px-3 py-2"}`}>
+        <div className={`flex items-center ${collapsed ? "justify-center" : "justify-between gap-3 px-2"}`}>
+          {!collapsed && (
+            <span className="text-[11px] font-medium text-white/40">Appearance</span>
+          )}
+          <ThemeToggle className={collapsed ? "" : "!text-white/60"} />
+        </div>
       </div>
 
       {/* Engine Status */}

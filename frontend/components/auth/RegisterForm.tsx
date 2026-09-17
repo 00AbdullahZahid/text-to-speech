@@ -8,10 +8,10 @@ import { SpectrumBars } from "../SpectrumBars";
 
 function BrandPanel() {
   return (
-    <div className="relative hidden overflow-hidden bg-[#0B1739] lg:flex lg:w-[45%] lg:items-center lg:justify-center">
+    <div className="relative hidden overflow-hidden bg-deep lg:flex lg:w-[45%] lg:items-center lg:justify-center">
       <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
       <div className="relative z-10 flex flex-col items-center px-12 text-center">
-        <SpectrumBars size="xl" animate className="text-[#2563EB] mb-10" />
+        <SpectrumBars size="xl" animate className="text-primary mb-10" />
         <h2 className="font-display text-[32px] font-bold leading-tight text-white">Your voice,<br />amplified.</h2>
         <p className="mt-4 max-w-[280px] text-[15px] leading-relaxed text-white/50">Join Voxa and start creating natural-sounding voiceovers with AI.</p>
       </div>
@@ -26,7 +26,6 @@ export function RegisterForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [focused, setFocused] = useState<string | null>(null);
   const supabase = createClient();
 
@@ -42,24 +41,6 @@ export function RegisterForm() {
     router.push("/app");
   }
 
-  if (success) {
-    return (
-      <div className="flex min-h-screen">
-        <BrandPanel />
-        <div className="flex flex-1 items-center justify-center px-6 py-12">
-          <div className="w-full max-w-[400px] rounded-2xl bg-white p-8 shadow-[0_20px_60px_-20px_rgba(17,13,42,0.12)] text-center">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-            </div>
-            <h2 className="font-display text-[20px] font-bold text-[#0B1739]">Account created</h2>
-            <p className="mt-2 text-[14px] text-[#64748B]">Welcome to Voxa. You can now start creating voiceovers.</p>
-            <Link href="/app" className="mt-6 inline-block rounded-xl bg-[#2563EB] px-7 py-3 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8]">Go to TTS Studio</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen">
       <BrandPanel />
@@ -67,38 +48,38 @@ export function RegisterForm() {
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-[400px]">
           <Link href="/" className="inline-flex items-center gap-2.5 lg:hidden mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#2563EB]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-primary">
               <span className="font-display text-base font-bold text-white">V</span>
             </div>
-            <span className="font-display text-xl font-bold text-[#0B1739]">Voxa</span>
+            <span className="font-display text-xl font-bold text-ink">Voxa</span>
           </Link>
 
-          <h1 className="font-display text-[26px] font-bold text-[#0B1739]">Create your Voxa account</h1>
+          <h1 className="font-display text-[26px] font-bold text-ink">Create your Voxa account</h1>
 
           <form onSubmit={handleSubmit} className="mt-8">
             {error && (
-              <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
+              <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-300">
                 <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 8v4m0 4h.01" /></svg>
                 {error}
               </div>
             )}
 
-            <label className="block text-[13px] font-semibold text-[#0B1739]">Email</label>
-            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "email" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`} placeholder="you@example.com" />
+            <label className="block text-[13px] font-semibold text-ink">Email</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused("email")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "email" ? "border-primary ring-2 ring-primary/15" : "border-line"} bg-soft`} placeholder="you@example.com" />
 
-            <label className="mt-5 block text-[13px] font-semibold text-[#0B1739]">Password</label>
-            <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "password" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`} placeholder="At least 6 characters" />
+            <label className="mt-5 block text-[13px] font-semibold text-ink">Password</label>
+            <input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} onFocus={() => setFocused("password")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "password" ? "border-primary ring-2 ring-primary/15" : "border-line"} bg-soft`} placeholder="At least 6 characters" />
 
-            <label className="mt-5 block text-[13px] font-semibold text-[#0B1739]">Confirm password</label>
-            <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onFocus={() => setFocused("confirm")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "confirm" ? "border-[#2563EB] ring-2 ring-[#2563EB]/15" : "border-[#E2E8F0]"} bg-[#EFF6FF]`} placeholder="Repeat password" />
+            <label className="mt-5 block text-[13px] font-semibold text-ink">Confirm password</label>
+            <input type="password" required minLength={6} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onFocus={() => setFocused("confirm")} onBlur={() => setFocused(null)} className={`mt-2 w-full rounded-xl border px-4 py-3 text-[14px] outline-none transition ${focused === "confirm" ? "border-primary ring-2 ring-primary/15" : "border-line"} bg-soft`} placeholder="Repeat password" />
 
-            <button type="submit" disabled={loading} className="mt-7 w-full rounded-xl bg-[#2563EB] py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={loading} className="mt-7 w-full rounded-xl bg-primary py-3.5 text-[14px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-primary-strong disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? "Creating account\u2026" : "Create account"}
             </button>
 
-            <p className="mt-5 text-center text-[13px] text-[#64748B]">
+            <p className="mt-5 text-center text-[13px] text-muted">
               Already have an account?{" "}
-              <Link href="/login" className="font-semibold text-[#2563EB] transition hover:text-[#1D4ED8]">Sign in</Link>
+              <Link href="/login" className="font-semibold text-primary transition hover:text-primary-strong">Sign in</Link>
             </p>
           </form>
         </div>

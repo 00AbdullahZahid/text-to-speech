@@ -5,8 +5,8 @@ export type ToastItem = {
 };
 
 const TONE_STYLES: Record<ToastItem["tone"], string> = {
-  success: "border-emerald-200 bg-white text-[#065F46]",
-  error: "border-red-200 bg-white text-[#991B1B]",
+  success: "border-emerald-200 bg-surface text-emerald-700",
+  error: "border-red-200 bg-surface text-red-700",
 };
 
 const ICONS: Record<ToastItem["tone"], React.ReactNode> = {
