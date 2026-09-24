@@ -81,6 +81,7 @@ export type JobInfo = {
     }[];
   };
   results?: { filename: string; format: AudioFormat; hasSubtitles?: boolean } | BatchResponse | null;
+  progress?: { done: number; total: number } | null;
   error?: string | null;
   createdAt: string;
   updatedAt: string;

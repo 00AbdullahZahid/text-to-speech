@@ -10,12 +10,27 @@ import soundfile as sf
 import numpy as np
 import re
 
-from config import SAMPLE_RATE
+from config import SAMPLE_RATE, VOICES
+from logger import logger
 
 pipeline = KPipeline(lang_code="a")
 
 # A cue made only of punctuation should fold into the preceding word.
 _PUNCT_ONLY = re.compile(r"^[.,!?;:'\"()\u2019\u201C\u201D]+$")
+
+
+def warmup_voices() -> None:
+    """Pre-download and load every configured voice into the pipeline cache.
+
+    Kokoro downloads each ``voices/<id>.pt`` file lazily on first use, which
+    would stall the first generation of a voice (observed at ~34 kB/s). Running
+    this in a background thread at startup makes every voice instant to use.
+    """
+    for voice_id in VOICES:
+        try:
+            pipeline.load_voice(voice_id)
+        except Exception as exc:  # noqa: BLE001 - warmup must never crash
+            logger.warning("Voice warmup failed for %s: %s", voice_id, exc)
 
 
 def generate_speech(text: str, voiceId: str, speed: float):

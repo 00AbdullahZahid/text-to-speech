@@ -58,6 +58,7 @@ def update_job(
     status: str,
     results: Any = None,
     error: Optional[str] = None,
+    progress: Any = None,
 ) -> bool:
     conn = build_connection()
     if conn is None:
@@ -69,10 +70,29 @@ def update_job(
             status=status,
             results=results,
             error=error,
+            progress=progress,
         )
         return True
     except Exception as exc:
         print(f"[repo] update_job failed: {exc}")
+        return False
+    finally:
+        conn.close()
+
+
+def update_job_progress(
+    *,
+    job_id: str,
+    progress: Any,
+) -> bool:
+    conn = build_connection()
+    if conn is None:
+        return False
+    try:
+        queries.update_job_progress(conn, job_id=job_id, progress=progress)
+        return True
+    except Exception as exc:
+        print(f"[repo] update_job_progress failed: {exc}")
         return False
     finally:
         conn.close()

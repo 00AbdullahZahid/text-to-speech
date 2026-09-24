@@ -781,11 +781,27 @@ export default function StudioPage() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary">
                   <SpectrumBars size="md" animate className="text-white" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[14px] font-semibold text-ink">
-                    {activeJob?.kind === "batch" ? "Generating batch&hellip;" : "Generating audio&hellip;"}
+                    {activeJob?.kind === "batch"
+                      ? (activeJob.progress && activeJob.progress.total > 0
+                          ? `Generating batch &mdash; script ${Math.min(activeJob.progress.done + 1, activeJob.progress.total)} of ${activeJob.progress.total}&hellip;`
+                          : "Generating batch&hellip;")
+                      : "Generating your audio&hellip;"}
                   </p>
-                  <p className="text-[12px] text-muted">Voxa is working in the background &mdash; you can navigate away or reload this page and it will keep going.</p>
+                  <p className="text-[12px] text-muted">
+                    {activeJob?.kind === "batch"
+                      ? "This usually takes a few seconds per script \u2014 your files will appear in History when it\u2019s done."
+                      : "This usually takes a few seconds \u2014 you can keep working, and the audio will be saved to History."}
+                  </p>
+                  {activeJob?.kind === "batch" && activeJob.progress && activeJob.progress.total > 0 && (
+                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary-strong transition-all duration-500"
+                        style={{ width: `${Math.round((activeJob.progress.done / activeJob.progress.total) * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

@@ -9,6 +9,7 @@ Composition:
 from __future__ import annotations
 
 import os
+import threading
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -38,7 +39,7 @@ os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
 
 def create_app() -> FastAPI:
-    app = FastAPI()
+    app = FastAPI(docs_url="/swagger")
 
     @app.on_event("startup")
     def _startup_recovery() -> None:
@@ -49,6 +50,19 @@ def create_app() -> FastAPI:
             jobs.startup_recovery()
         except Exception as exc:  # noqa: BLE001 - best-effort
             print(f"[startup] jobs recovery skipped: {exc}")
+
+    @app.on_event("startup")
+    def _startup_voice_warmup() -> None:
+        """Pre-download all voices on a background thread so the first
+        generation of a voice never stalls on a lazy download.
+        """
+        from services.tts import warmup_voices
+
+        threading.Thread(
+            target=warmup_voices,
+            daemon=True,
+            name="voice-warmup",
+        ).start()
 
     app.add_exception_handler(
         RequestValidationError,

@@ -50,6 +50,7 @@ def create_job(
         "text": text,
         "payload": payload,
         "results": None,
+        "progress": None,
         "error": None,
         "createdAt": _now_iso(),
         "updatedAt": _now_iso(),
@@ -87,6 +88,20 @@ def _set_status(
         results=results,
         error=error,
     )
+
+
+def update_progress(job_id: str, progress: Dict[str, Any]) -> None:
+    """Record in-progress detail (e.g. ``{"done": 3, "total": 5}`` for batches).
+
+    Updates the live in-memory job (authoritative while this process runs) and
+    mirrors the value to PostgreSQL best-effort so the field survives restarts.
+    """
+    with _store_lock:
+        job = _jobs.get(job_id)
+        if job:
+            job["progress"] = progress
+            job["updatedAt"] = _now_iso()
+    jobs_repository.update_job_progress(job_id=job_id, progress=progress)
 
 
 def run(job_id: str, fn: Callable[[], Any]) -> None:

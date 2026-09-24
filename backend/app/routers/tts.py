@@ -155,6 +155,7 @@ def generate_batch(request: BatchGenerateRequest, user_id: UserId) -> dict:
 
     def _run_batch() -> dict:
         results = []
+        total = len(payload["items"])
         for index, item in enumerate(payload["items"]):
             try:
                 validate_generation_params(
@@ -199,6 +200,7 @@ def generate_batch(request: BatchGenerateRequest, user_id: UserId) -> dict:
                         "error": str(exc),
                     }
                 )
+            jobs.update_progress(job_id, {"done": index + 1, "total": total})
         return {"results": results, "total": len(results)}
 
     jobs.run(job_id, _run_batch)

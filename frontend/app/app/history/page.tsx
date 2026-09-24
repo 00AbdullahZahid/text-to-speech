@@ -32,6 +32,9 @@ export default function HistoryPage() {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmingBatch, setConfirmingBatch] = useState(false);
+  const [deletingMany, setDeletingMany] = useState(false);
 
   useEffect(() => {
     apiFetch("/audio").then((r) => r.json()).then((d) => setHistory(d.files || [])).catch(() => {}).finally(() => setLoading(false));
@@ -59,6 +62,51 @@ export default function HistoryPage() {
     setDeleting(filename);
     try { await apiFetch(`/audio/${encodeURIComponent(filename)}`, { method: "DELETE" }); setHistory((h) => h.filter((i) => i.filename !== filename)); }
     finally { setDeleting(null); setConfirmingDelete(null); }
+  }
+
+  const selectedCount = selected.size;
+  const allFilteredSelected = filtered.length > 0 && filtered.every((f) => selected.has(f.filename));
+
+  function toggleSelect(filename: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(filename)) next.delete(filename);
+      else next.add(filename);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (filtered.every((f) => next.has(f.filename))) {
+        filtered.forEach((f) => next.delete(f.filename));
+      } else {
+        filtered.forEach((f) => next.add(f.filename));
+      }
+      return next;
+    });
+  }
+
+  async function handleDeleteMany() {
+    if (selected.size === 0) return;
+    setDeletingMany(true);
+    const filenames = Array.from(selected);
+    const settled = await Promise.allSettled(
+      filenames.map((fn) => apiFetch(`/audio/${encodeURIComponent(fn)}`, { method: "DELETE" }))
+    );
+    const deleted: string[] = [];
+    filenames.forEach((fn, i) => {
+      const r = settled[i];
+      if (r.status === "fulfilled" && r.value.ok) deleted.push(fn);
+    });
+    setHistory((h) => h.filter((i) => !deleted.includes(i.filename)));
+    setSelected(new Set());
+    setConfirmingBatch(false);
+    setDeletingMany(false);
+    if (deleted.length < filenames.length) {
+      window.alert(`${filenames.length - deleted.length} file${filenames.length - deleted.length === 1 ? "" : "s"} could not be deleted.`);
+    }
   }
 
   return (
@@ -93,6 +141,36 @@ export default function HistoryPage() {
             <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
             {sortOrder === "newest" ? "Newest" : "Oldest"}
           </button>
+        </div>
+      )}
+
+      {!loading && filtered.length > 0 && selectedCount > 0 && (
+        <div className={`mb-5 rounded-2xl border px-4 py-3 transition ${confirmingBatch ? "border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/40" : "border-red-200/70 bg-red-50/60 dark:border-red-800/40 dark:bg-red-950/30"}`}>
+          {confirmingBatch ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[13px] font-medium text-red-700 dark:text-red-300">Delete {selectedCount} generation{selectedCount === 1 ? "" : "s"}? This action cannot be undone.</p>
+              <div className="flex shrink-0 gap-2">
+                <button type="button" onClick={handleDeleteMany} disabled={deletingMany} className="rounded-xl bg-error px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-red-600 disabled:opacity-60">{deletingMany ? "Deleting\u2026" : `Yes, delete ${selectedCount}`}</button>
+                <button type="button" onClick={() => setConfirmingBatch(false)} className="rounded-xl border border-line bg-surface px-4 py-2 text-[12px] font-semibold text-ink">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <button type="button" onClick={toggleSelectAll} className="inline-flex items-center gap-2 text-[13px] font-semibold text-ink transition hover:text-primary" title={allFilteredSelected ? "Clear selection" : "Select all shown"}>
+                <span className={`flex h-4.5 w-4.5 items-center justify-center rounded border transition ${allFilteredSelected ? "border-error bg-error text-white" : "border-line bg-surface"}`}>
+                  {allFilteredSelected && <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                </span>
+                Select all shown
+              </button>
+              <div className="flex items-center gap-3">
+                <p className="text-[13px] font-medium text-red-700 dark:text-red-300">{selectedCount} selected</p>
+                <div className="flex shrink-0 gap-2">
+                  <button type="button" onClick={() => { setSelected(new Set()); setConfirmingBatch(false); }} className="rounded-xl border border-line bg-surface px-4 py-2 text-[12px] font-semibold text-ink transition hover:border-error">Clear</button>
+                  <button type="button" onClick={() => setConfirmingBatch(true)} className="rounded-xl bg-error px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-red-600">Delete selected</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -397,6 +397,12 @@ def ensure_generation_jobs_table(conn: PgConnection) -> None:
             )
             """
         )
+        cur.execute(
+            """
+            ALTER TABLE generation_jobs
+            ADD COLUMN IF NOT EXISTS progress JSONB
+            """
+        )
 
 
 def _row_to_job(row: Dict[str, Any]) -> Dict[str, Any]:
@@ -416,6 +422,7 @@ def _row_to_job(row: Dict[str, Any]) -> Dict[str, Any]:
         "text": row.get("text"),
         "payload": _load(row.get("payload")),
         "results": _load(row.get("results")),
+        "progress": _load(row.get("progress")),
         "error": row.get("error"),
         "createdAt": row["created_at"].isoformat() if row.get("created_at") else "",
         "updatedAt": row["updated_at"].isoformat() if row.get("updated_at") else "",
@@ -450,6 +457,7 @@ def update_job(
     status: str,
     results: Any = None,
     error: Optional[str] = None,
+    progress: Any = None,
 ) -> None:
     with conn.cursor() as cur:
         cur.execute(
@@ -458,6 +466,7 @@ def update_job(
             SET status = %s,
                 results = %s::jsonb,
                 error = %s,
+                progress = %s::jsonb,
                 updated_at = now()
             WHERE id = %s
             """,
@@ -465,8 +474,27 @@ def update_job(
                 status,
                 json.dumps(results) if results is not None else None,
                 error,
+                json.dumps(progress) if progress is not None else None,
                 job_id,
             ),
+        )
+
+
+def update_job_progress(
+    conn: PgConnection,
+    *,
+    job_id: str,
+    progress: Any,
+) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE generation_jobs
+            SET progress = %s::jsonb,
+                updated_at = now()
+            WHERE id = %s
+            """,
+            (json.dumps(progress), job_id),
         )
 
 
@@ -479,7 +507,7 @@ def get_job(
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, user_id, kind, status, text, payload, results, error,
+            SELECT id, user_id, kind, status, text, payload, results, progress, error,
                    created_at, updated_at
             FROM generation_jobs
             WHERE id = %s AND user_id = %s
@@ -499,7 +527,7 @@ def list_jobs(
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, user_id, kind, status, text, payload, results, error,
+            SELECT id, user_id, kind, status, text, payload, results, progress, error,
                    created_at, updated_at
             FROM generation_jobs
             WHERE user_id = %s
