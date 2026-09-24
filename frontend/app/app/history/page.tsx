@@ -206,6 +206,13 @@ export default function HistoryPage() {
             }
             return (
               <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-surface px-5 py-4 shadow-sm transition hover:shadow-md">
+                <input
+                  type="checkbox"
+                  checked={selected.has(item.filename)}
+                  onChange={() => toggleSelect(item.filename)}
+                  aria-label={`Select ${item.text ? item.text.slice(0, 40) : item.filename}`}
+                  className="h-4 w-4 shrink-0 cursor-pointer rounded border-line accent-error"
+                />
                 <GradientIcon className="h-10 w-10 rounded-xl">
                   <SpectrumBars size="sm" className="text-white" />
                 </GradientIcon>
