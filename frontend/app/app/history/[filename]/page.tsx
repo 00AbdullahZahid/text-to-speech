@@ -7,6 +7,7 @@ import { apiFetch, API_URL } from "../../../../lib/api";
 import { AudioPlayer } from "../../../../components/AudioPlayer";
 import { SpectrumBars } from "../../../../components/SpectrumBars";
 import { voiceName } from "../../../../lib/voices";
+import { GradientIcon } from "../../../../components/Decorative";
 
 type Generation = {
   filename: string;
@@ -78,7 +79,7 @@ export default function GenerationDetailPage() {
   if (loading) return <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-primary" /></div>;
   if (!gen) return (
     <div className="mt-12 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-soft text-primary-200"><SpectrumBars size="md" /></div>
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)]"><SpectrumBars size="md" className="text-white" /></div>
       <p className="text-[14px] font-semibold text-ink">Generation not found</p>
       <Link href="/app/history" className="mt-3 inline-block text-[13px] font-semibold text-primary">Back to history</Link>
     </div>
@@ -88,12 +89,23 @@ export default function GenerationDetailPage() {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="mb-6 flex items-start gap-3">
         <Link href="/app/history" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted transition hover:text-primary">
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
           Back to history
         </Link>
-        <h1 className="mt-3 font-display text-[24px] font-bold tracking-tight text-ink">Generation Details</h1>
+      </div>
+      <div className="mb-6 flex items-start gap-4">
+        <GradientIcon tone="primary" className="h-12 w-12 rounded-2xl">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </GradientIcon>
+        <div>
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">Generation Details</h1>
+          <p className="mt-1 text-[13px] text-muted">{formatDate(gen.created_at)}</p>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
@@ -124,7 +136,7 @@ export default function GenerationDetailPage() {
 
           <section className="rounded-2xl bg-surface p-6 shadow-sm">
             <h2 className="mb-3 text-[15px] font-semibold text-ink">Original text</h2>
-            <p className="text-[13px] leading-relaxed text-ink whitespace-pre-wrap">{gen.text || "No text recorded."}</p>
+            <p className="break-words text-[13px] leading-relaxed text-ink whitespace-pre-wrap [overflow-wrap:anywhere]">{gen.text || "No text recorded."}</p>
           </section>
         </div>
 

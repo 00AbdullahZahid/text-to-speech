@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { DotGrid, GradientBlobs, GradientIcon, WaveArt } from "../components/Decorative";
 
 const NAVY = "#0B1739";
 const BLUE = "#2563EB";
 const White = "#ffffff";
-const BLUE_LIGHT = "#EFF6FF";
 
 const FEATURES = [
   {
     title: "AI Text-to-Speech",
     desc: "Turn scripts, notes, and content into natural-sounding WAV audio.",
+    tone: "primary",
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z" />
@@ -22,7 +23,8 @@ const FEATURES = [
   },
   {
     title: "Image OCR",
-    desc: "Extract text from images with Qwen2.5-VL and send it straight to TTS.",
+    desc: "Extract text from images and send it straight to Voxa TTS.",
+    tone: "violet",
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -34,6 +36,7 @@ const FEATURES = [
   {
     title: "8 Languages",
     desc: "Create speech across Afrikaans, English, Spanish, Hindi, French, Japanese, Portuguese, and Chinese.",
+    tone: "accent",
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -45,6 +48,7 @@ const FEATURES = [
   {
     title: "Generation History",
     desc: "Play, download, review, or delete previous generations whenever you need them.",
+    tone: "success",
     icon: (
       <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="10" />
@@ -183,14 +187,19 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────── */}
-      <section className="pt-32 pb-20 lg:pt-40 lg:pb-28 bg-blue-800">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <p className="mb-4 text-right text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: White }}>
+      <section className="relative overflow-hidden bg-[radial-gradient(1100px_620px_at_50%_-12%,#1E3A8A_0%,#0B1739_62%)] pt-32 pb-28 lg:pt-40 lg:pb-36">
+        <DotGrid className="opacity-60" />
+        <GradientBlobs />
+        <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
+          <p className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: White }}>
             AI Text-to-Speech
           </p>
 
           <h1 className="font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-[#ffffff] sm:text-5xl lg:text-[56px]">
-            Turn your words into natural voice.
+            Turn your words into{" "}
+            <span className="bg-gradient-to-r from-[#60A5FA] to-[#22D3EE] bg-clip-text text-transparent">
+              natural voice.
+            </span>
           </h1>
 
           <p className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[13px] font-medium text-[#EFF6FF]">
@@ -208,19 +217,49 @@ export default function LandingPage() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-[14px] font-semibold text-white transition hover:opacity-90 bg-blue-500"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] px-7 py-3.5 text-[14px] font-semibold text-white shadow-[0_16px_40px_-12px_rgba(37,99,235,0.7)] transition hover:opacity-90"
             >
               Start creating
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
             <a
               href="#how-it-works"
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-7 py-3.5 text-[14px] font-semibold text-[#0F172A] transition hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-7 py-3.5 text-[14px] font-semibold text-white backdrop-blur transition hover:bg-white/20"
             >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
               See how it works
             </a>
           </div>
+
+          {/* Hero visual */}
+          <div className="relative mx-auto mt-16 max-w-md rounded-2xl border border-white/10 bg-white/[0.06] p-5 text-left shadow-[0_24px_48px_-16px_rgba(0,0,0,0.55)] backdrop-blur">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#60A5FA] to-[#1D4ED8] text-white shadow-lg">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="9" y="2" width="6" height="12" rx="3" />
+                    <path d="M5 10a7 7 0 0014 0" />
+                    <line x1="12" y1="17" x2="12" y2="22" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-white">Voxa Studio</p>
+                  <p className="text-[11px] text-white/55">Nova &middot; 1.00&times; &middot; WAV</p>
+                </div>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#60A5FA] to-[#1D4ED8] text-white shadow-lg" title="Preview">
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </div>
+            </div>
+            <WaveArt className="mt-4 h-12 w-full" />
+            <div className="mt-4 flex items-center justify-center gap-2">
+              <span className="rounded-full bg-white/[0.08] px-3 py-1 text-[10px] font-semibold text-white/70">9 voices</span>
+              <span className="rounded-full bg-white/[0.08] px-3 py-1 text-[10px] font-semibold text-white/70">Subtitles</span>
+              <span className="rounded-full bg-white/[0.08] px-3 py-1 text-[10px] font-semibold text-white/70">Cloud audio</span>
+            </div>
+          </div>
         </div>
+        <WaveArt className="absolute inset-x-0 bottom-0 h-14 opacity-30" />
       </section>
 
       {/* ── Trust Bar ──────────────────────────────────────── */}
@@ -251,14 +290,11 @@ export default function LandingPage() {
             {FEATURES.map((f) => (
               <div
                 key={f.title}
-                className="rounded-[10px] border border-gray-200 bg-white p-6 transition hover:shadow-md"
+                className="group relative overflow-hidden rounded-[10px] border border-gray-200 bg-white p-6 transition hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-xl"
               >
-                <div
-                  className="flex h-10 w-10 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: BLUE_LIGHT, color: BLUE }}
-                >
+                <GradientIcon tone={f.tone as "primary" | "violet" | "accent" | "success"} className="h-11 w-11 rounded-xl transition group-hover:scale-105">
                   {f.icon}
-                </div>
+                </GradientIcon>
                 <h3 className="mt-4 text-[15px] font-semibold text-[#0F172A]">{f.title}</h3>
                 <p className="mt-1.5 text-[13px] leading-relaxed text-[#64748B]">{f.desc}</p>
               </div>
@@ -278,12 +314,9 @@ export default function LandingPage() {
             {STEPS.map((s) => (
               <div
                 key={s.num}
-                className="rounded-[10px] bg-blue-50 p-6"
+                className="relative rounded-[10px] border border-blue-100 bg-gradient-to-b from-white to-blue-50 p-6 transition hover:-translate-y-0.5 hover:shadow-lg"
               >
-                <span
-                  className="inline-block rounded-md px-2.5 py-1 text-[12px] font-bold"
-                  style={{ backgroundColor: BLUE_LIGHT, color: BLUE }}
-                >
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#3B82F6] to-[#1D4ED8] font-display text-[13px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)]">
                   {s.num}
                 </span>
                 <h3 className="mt-4 text-[15px] font-semibold text-[#0F172A]">{s.title}</h3>
@@ -298,9 +331,12 @@ export default function LandingPage() {
       <section className="bg-blue-100 py-20 lg:py-28">
         <div className="mx-auto max-w-6xl px-6">
           <div
-            className="flex flex-col items-center justify-between gap-8 rounded-2xl px-8 py-14 sm:px-12 lg:flex-row lg:px-16"
+            className="relative overflow-hidden rounded-2xl px-8 py-14 sm:px-12 lg:px-16"
             style={{ backgroundColor: NAVY }}
           >
+            <GradientBlobs className="opacity-70" />
+            <DotGrid className="opacity-40" />
+            <div className="relative z-10 flex flex-col items-center justify-between gap-8 lg:flex-row">
             <div className="max-w-lg text-center lg:text-left">
               <h2 className="font-display text-[26px] font-bold tracking-tight text-white sm:text-[30px]">
                 Ready to turn words into voice?
@@ -311,12 +347,12 @@ export default function LandingPage() {
             </div>
             <Link
               href="/register"
-              className="inline-flex shrink-0 items-center gap-2 rounded-lg px-7 py-3.5 text-[14px] font-semibold text-white transition hover:opacity-90"
-              style={{ backgroundColor: BLUE }}
+              className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-gradient-to-r from-[#3B82F6] to-[#1D4ED8] px-7 py-3.5 text-[14px] font-semibold text-white shadow-[0_16px_40px_-12px_rgba(37,99,235,0.7)] transition hover:opacity-90"
             >
               Get started
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
             </Link>
+            </div>
           </div>
         </div>
       </section>

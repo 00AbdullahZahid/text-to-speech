@@ -10,6 +10,7 @@
   --primary: #2563EB;
   --primary-strong: #1D4ED8;
   --dark: #0B1739;
+  --sidebar: #0B1739;
   --muted: #64748B;
   --border: #E2E8F0;
   --success: #10B981;
@@ -24,6 +25,7 @@
   --surface-muted: #1D2E58;
   --primary: #3B82F6;
   --primary-strong: #2563EB;
+  --sidebar: #0A0F1E;
   --muted: #9FB0D1;
   --border: #2A3D6B;
 }
@@ -46,6 +48,7 @@
   --color-primary-200: #BFDBFE;
   --color-accent: var(--warm);
   --color-deep: var(--dark);
+  --color-sidebar: var(--sidebar);
   --color-error: var(--error);
   --color-success: var(--success);
 }
@@ -70,6 +73,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Long unbroken content (e.g. pasted JSON) must never stretch the page. */
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
 }
 
 .font-display {

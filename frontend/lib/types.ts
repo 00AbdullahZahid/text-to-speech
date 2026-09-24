@@ -29,7 +29,8 @@ export type FormatOption = {
 export type AppConfig = {
   voices: VoiceOption[];
   minTextLength: number;
-  maxTextLength: number;
+  maxTextWords: number;
+  maxTextChars?: number;
   minSpeed: number;
   maxSpeed: number;
   outputsPath: string;
@@ -57,4 +58,30 @@ export type BatchItemResult = {
 export type BatchResponse = {
   results: BatchItemResult[];
   total: number;
+};
+
+export type JobStatus = "queued" | "running" | "completed" | "failed";
+
+export type JobInfo = {
+  id: string;
+  userId?: string;
+  kind: "single" | "batch";
+  status: JobStatus;
+  text?: string | null;
+  payload?: {
+    text?: string;
+    voiceId?: string;
+    speed?: number;
+    format?: AudioFormat;
+    items?: {
+      text: string;
+      voiceId: string;
+      speed: number;
+      format: AudioFormat;
+    }[];
+  };
+  results?: { filename: string; format: AudioFormat; hasSubtitles?: boolean } | BatchResponse | null;
+  error?: string | null;
+  createdAt: string;
+  updatedAt: string;
 };

@@ -4,7 +4,7 @@ const NAVY = "#0B1739";
 const BLUE = "#2563EB";
 
 export default function NotFound() {
-  return (
+  return ( 
     <div className="flex min-h-screen flex-col bg-[#F8FAFC]">
       {/* ── Floating Navbar ───────────────────────────────── */}
       <header className="fixed top-4 z-50 w-full px-4">

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "../lib/auth";
-import { SpectrumBars } from "./SpectrumBars";
 import { ThemeToggle } from "./ThemeToggle";
 
 export type NavItem = {
@@ -96,7 +95,7 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className={`hidden h-full shrink-0 flex-col bg-[#0B1739] transition-all duration-200 lg:flex ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
+    <aside className={`hidden h-full shrink-0 flex-col bg-sidebar transition-all duration-200 lg:flex ${collapsed ? "w-[72px]" : "w-[260px]"}`}>
       {/* Logo */}
       <div className={`pb-7 pt-6 ${collapsed ? "px-3 flex justify-center" : "px-5"}`}>
         <BrandLogo compact={collapsed} />
@@ -181,27 +180,6 @@ export function Sidebar() {
           <ThemeToggle className={collapsed ? "" : "!text-white/60"} />
         </div>
       </div>
-
-      {/* Engine Status */}
-      {!collapsed && (
-        <div className="mx-3 mb-3 rounded-xl bg-white/[0.04] p-4">
-          <div className="flex items-center gap-2.5">
-            <SpectrumBars size="sm" className="text-[#2563EB]" />
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-white/30">TTS Engine</p>
-              <p className="mt-0.5 text-[13px] font-semibold text-white">Kokoro-82M</p>
-            </div>
-          </div>
-          <p className="mt-1.5 text-[11px] text-white/40">CPU &middot; Local inference</p>
-          <div className="mt-2.5 flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
-            </span>
-            <span className="text-[11px] font-medium text-emerald-400">Ready</span>
-          </div>
-        </div>
-      )}
 
       {/* User */}
       {!collapsed && (

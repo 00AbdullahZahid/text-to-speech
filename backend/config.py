@@ -40,7 +40,6 @@ SUBTITLE_MIME = "application/x-subrip"
 
 # Batch generation
 MAX_BATCH_ITEMS = 20
-BATCH_TEXT_MAX_LENGTH = 800
 
 # Presets
 PRESET_NAME_MAX_LENGTH = 60
@@ -50,8 +49,13 @@ MAX_PRESETS_PER_USER = 50
 VOICES = {
     "af_alloy": "Alloy",
     "af_bella": "Bella",
+    "af_heart": "Heart",
+    "af_nova": "Nova",
     "am_adam": "Adam",
     "am_michael": "Michael",
+    "am_echo": "Echo",
+    "am_onyx": "Onyx",
+    "bm_daniel": "Daniel",
 }
 
 VOICE_OPTIONS = [
@@ -62,10 +66,11 @@ VOICE_OPTIONS = [
 VOICE_DISPLAY = VOICES
 VALID_VOICE_IDS = set(VOICES.keys())
 
-#LimitationsMIN_TEXT_LENGTH = 1
-
+# Limits
 MIN_TEXT_LENGTH = 1
-MAX_TEXT_LENGTH = 800
+MAX_TEXT_WORDS = 800
+# Hard character cap — catches no-space input that a word count never sees.
+MAX_TEXT_CHARS = 4000
 
 MIN_SPEED = 0.5
 MAX_SPEED = 1.5

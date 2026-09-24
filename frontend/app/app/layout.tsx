@@ -34,7 +34,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
         onClick={onClose}
       />
       <div
-        className={`absolute inset-y-0 left-0 flex w-[280px] flex-col bg-[#0B1739] shadow-2xl transition-transform duration-200 ${
+        className={`absolute inset-y-0 left-0 flex w-[280px] flex-col bg-sidebar shadow-2xl transition-transform duration-200 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -93,7 +93,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function MobileTopBar({ onMenu }: { onMenu: () => void }) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-[#E2E8F0] bg-[#EFF6FF] px-4 lg:hidden dark:border-[#2A3D6B] dark:bg-[#0B1739]">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-[#E2E8F0] bg-[#EFF6FF] px-4 lg:hidden dark:border-white/[0.06] dark:bg-sidebar">
       <button
         type="button"
         onClick={onMenu}
@@ -113,13 +113,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthGuard>
-      <div className="flex h-screen bg-[#EFF6FF] dark:bg-[#0B1739]">
+      <div className="flex h-screen bg-canvas">
         <Sidebar />
         <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <MobileTopBar onMenu={() => setMobileOpen(true)} />
-          <main className="flex-1 overflow-y-auto">
-            <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
+          <main className="relative flex-1 overflow-y-auto overflow-x-hidden">
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-primary/10 to-transparent" />
+            <div className="relative mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-8 lg:px-12 lg:py-10">
               {children}
             </div>
           </main>

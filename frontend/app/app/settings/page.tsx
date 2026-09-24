@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createClient } from "../../../lib/auth";
 import { loadStudioDefaults, resolveTheme, saveStudioDefaults, setTheme as persistTheme, type ThemeMode, type StudioDefaults } from "../../../lib/theme";
 import { voiceName } from "../../../lib/voices";
+import { GradientIcon } from "../../../components/Decorative";
 
 type VoiceOption = { id: string; name: string };
 type StudioConfig = { minSpeed: number; maxSpeed: number };
@@ -61,9 +62,17 @@ export default function SettingsPage() {
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">Settings</h1>
-        <p className="mt-1 text-[14px] text-muted">Manage your account, appearance, and studio defaults.</p>
+      <div className="mb-8 flex items-start gap-4">
+        <GradientIcon tone="accent" className="h-12 w-12 rounded-2xl">
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+          </svg>
+        </GradientIcon>
+        <div>
+          <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">Settings</h1>
+          <p className="mt-1 text-[14px] text-muted">Manage your account, appearance, and studio defaults.</p>
+        </div>
       </div>
 
       <div className="space-y-6">
@@ -178,8 +187,8 @@ export default function SettingsPage() {
           <h2 className="text-[15px] font-semibold text-ink">Application</h2>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {[
-              ["TTS Engine", "Kokoro-82M", "CPU-only local inference", "var(--success)"],
-              ["OCR Engine", "Qwen2.5-VL-3B-Instruct", "HuggingFace Transformers", "var(--primary)"],
+              ["Text-to-Speech", "Voxa", "Local speech synthesis", "var(--success)"],
+              ["OCR", "Integrated", "Image text extraction", "var(--primary)"],
               ["Storage", "Supabase Storage", "Bucket: voxa-audio", "#10B981"],
               ["Database", "PostgreSQL", "audio_generations table", "var(--accent)"],
             ].map(([title, name, detail, color]) => (

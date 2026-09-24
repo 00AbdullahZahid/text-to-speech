@@ -1,8 +1,8 @@
-"""TTS endpoints: POST /generate, POST /generate/batch, and subtitle access.
+"""TTS endpoints: POST /generate, POST /generate/batch, jobs, and subtitles.
 
-The core generation lives in :func:`_run_generation` so single and batch
-requests share one code path. Each generation synthesizes with Kokoro, saves
-the chosen format locally, uploads to Supabase Storage, and persists metadata.
+Generation runs in the background (see services/jobs.py) so long scripts and
+batches never hit the ~100s edge-proxy timeout. The core synthesis lives in
+:func:`_run_generation` so single and batch requests share one code path.
 """
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from fastapi import APIRouter, HTTPException, Response
 from app.dependencies import UserId
 from app.repositories import audio_repository
 from config import (
-    BATCH_TEXT_MAX_LENGTH,
     MAX_BATCH_ITEMS,
     OUTPUTS_DIR,
     SUBTITLE_EXT,
@@ -22,9 +21,10 @@ from config import (
 )
 from logger import logger
 from models import BatchGenerateRequest, GenerateRequest
+from services import jobs
 from services.tts import build_srt, generate_speech, save_audio
 from storage import supabase_storage
-from validators import validate_format
+from validators import validate_format, validate_generation_params, validate_text_length
 
 router = APIRouter(tags=["tts"])
 
@@ -92,13 +92,35 @@ def _run_generation(
 
 @router.post("/generate")
 def generate(request: GenerateRequest, user_id: UserId) -> dict:
-    return _run_generation(
-        text=request.text,
-        voice_id=request.voiceId,
-        speed=request.speed,
-        fmt=request.format,
+    try:
+        validate_generation_params(request.voiceId, request.speed, request.format)
+        validate_text_length(request.text)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    payload = {
+        "text": request.text,
+        "voiceId": request.voiceId,
+        "speed": request.speed,
+        "format": request.format,
+    }
+    job_id = jobs.create_job(
         user_id=user_id,
+        kind="single",
+        text=request.text,
+        payload=payload,
     )
+    jobs.run(
+        job_id,
+        lambda: _run_generation(
+            text=payload["text"],
+            voice_id=payload["voiceId"],
+            speed=payload["speed"],
+            fmt=payload["format"],
+            user_id=user_id,
+        ),
+    )
+    return {"jobId": job_id}
 
 
 @router.post("/generate/batch")
@@ -113,49 +135,87 @@ def generate_batch(request: BatchGenerateRequest, user_id: UserId) -> dict:
             detail=f"Too many items. Maximum is {MAX_BATCH_ITEMS}.",
         )
 
-    results = []
-    for index, item in enumerate(items):
-        text_length = len(item.text.strip())
-        if text_length < 1 or len(item.text) > BATCH_TEXT_MAX_LENGTH:
-            results.append(
-                {
-                    "index": index,
-                    "filename": "",
-                    "format": item.format,
-                    "success": False,
-                    "error": "Text length out of range",
-                }
-            )
-            continue
-        try:
-            result = _run_generation(
-                text=item.text,
-                voice_id=item.voiceId,
-                speed=item.speed,
-                fmt=item.format,
-                user_id=user_id,
-            )
-            results.append(
-                {
-                    "index": index,
-                    **result,
-                    "success": True,
-                    "error": "",
-                }
-            )
-        except (ValueError, OSError) as exc:
-            logger.error("Batch item %s failed: %s", index, exc)
-            results.append(
-                {
-                    "index": index,
-                    "filename": "",
-                    "format": item.format,
-                    "success": False,
-                    "error": str(exc),
-                }
-            )
+    payload = {
+        "items": [
+            {
+                "text": item.text,
+                "voiceId": item.voiceId,
+                "speed": item.speed,
+                "format": item.format,
+            }
+            for item in items
+        ]
+    }
+    job_id = jobs.create_job(
+        user_id=user_id,
+        kind="batch",
+        text=None,
+        payload=payload,
+    )
 
-    return {"results": results, "total": len(results)}
+    def _run_batch() -> dict:
+        results = []
+        for index, item in enumerate(payload["items"]):
+            try:
+                validate_generation_params(
+                    item["voiceId"], item["speed"], item["format"]
+                )
+                validate_text_length(item["text"])
+            except ValueError as exc:
+                results.append(
+                    {
+                        "index": index,
+                        "filename": "",
+                        "format": item["format"],
+                        "success": False,
+                        "error": str(exc),
+                    }
+                )
+                continue
+            try:
+                result = _run_generation(
+                    text=item["text"],
+                    voice_id=item["voiceId"],
+                    speed=item["speed"],
+                    fmt=item["format"],
+                    user_id=user_id,
+                )
+                results.append(
+                    {
+                        "index": index,
+                        **result,
+                        "success": True,
+                        "error": "",
+                    }
+                )
+            except (ValueError, OSError) as exc:
+                logger.error("Batch item %s failed: %s", index, exc)
+                results.append(
+                    {
+                        "index": index,
+                        "filename": "",
+                        "format": item["format"],
+                        "success": False,
+                        "error": str(exc),
+                    }
+                )
+        return {"results": results, "total": len(results)}
+
+    jobs.run(job_id, _run_batch)
+    return {"jobId": job_id}
+
+
+@router.get("/jobs")
+def list_jobs(user_id: UserId) -> dict:
+    return {"jobs": jobs.list_jobs(user_id)}
+
+
+@router.get("/jobs/{job_id}")
+def get_job(job_id: str, user_id: UserId) -> dict:
+    job = jobs.get_job(job_id, user_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 
 
 @router.get("/generate/{filename}/subtitles")

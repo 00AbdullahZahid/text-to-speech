@@ -272,3 +272,27 @@ Every meaningful decision, why it was made, and when it changed.
 **Decision:** Add a new `voice_presets` table and `GET/POST/PATCH/DELETE /presets` routes, user-scoped via the JWT `sub`.
 
 **Reason:** Presets are (name, voiceId, speed, format) tuples with their own lifecycle and list UI; a dedicated table and router keep them independent of the generation metadata table. A per-user cap (50) prevents unbounded growth.
+
+## 35. OCR Engine: EasyOCR (replaces Qwen2.5-VL-3B)
+
+**Decision:** Replace `Qwen/Qwen2.5-VL-3B-Instruct` for image-to-text extraction with EasyOCR (`easyocr.Reader`, gpu=False).
+
+**Reason:** The 3B VLM was very slow on CPU (multi-minute inference). EasyOCR — a lightweight CRAFT detector + CNN recognizer — extracts printed text in a few seconds on CPU while remaining accurate for the kinds of images this product OCRs (documents, screenshots, labels). Its English models are cached locally, so no first-use download is needed. Languages are configurable via `OCR_LANGUAGES` (default `en`). Text boxes are grouped into visual lines (top-to-bottom, then left-to-right) so the result reads naturally into the TTS script.
+
+**Changed in:** `services/ocr.py`, `app/routers/ocr.py` unchanged, `requirements.txt` (drop `qwen-vl-utils`, add `easyocr`), OCR page + Settings copy.
+
+## 36. Text Limit: 800 Words (not Characters)
+
+**Decision:** The per-script limit for single and batch generation is `MAX_TEXT_WORDS = 800`, counted as whitespace-separated words, replacing the old 800-character cap.
+
+**Reason:** 800 characters (~120 words) was far too restrictive for real voiceovers. Word count is the natural unit for speech length. The backend rejects over-limit scripts (`/generate` and each `/generate/batch` item) so the frontend check can't be bypassed.
+
+**Changed in:** `config.py`, `validators.py`, `app/routers/tts.py`, `/config` exposes `maxTextWords`, Studio UI counts "words".
+
+## 37. Async Generation Jobs (Background + Reload-Resilient)
+
+**Decision:** `/generate` and `/generate/batch` now create a `generation_jobs` row and return immediately with `{jobId}`; the synthesis runs in a background worker thread. The backend exposes `GET /jobs` and `GET /jobs/{id}`; the Studio polls a job until it reaches `completed`/`failed`. In-progress jobs are mirrored to PostgreSQL (best-effort, with an in-memory fallback) so the UI can resume watching a job after a page reload.
+
+**Reason:** CPU synthesis of long scripts (now up to 800 words) or a 20-item batch far exceeds the ~100s limit of the Cloudflare quick tunnel, so synchronous requests were timing out and batch generation appeared to "not work". Returning a job id immediately keeps the request tiny (no timeout), and persisting job state lets a reloaded page pick the generation back up instead of losing it.
+
+**Changed in:** `services/jobs.py` (new), `database/queries.py` (generation_jobs table), `repositories/jobs_repository.py` (new), `app/routers/tts.py`, `app/main.py` (startup schema + stale-job reap), Studio polling UI.

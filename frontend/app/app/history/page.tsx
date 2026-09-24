@@ -5,6 +5,7 @@ import Link from "next/link";
 import { apiFetch, API_URL } from "../../../lib/api";
 import { SpectrumBars } from "../../../components/SpectrumBars";
 import { voiceName } from "../../../lib/voices";
+import { DotGrid, GradientBlobs, GradientIcon } from "../../../components/Decorative";
 
 type Generation = {
   filename: string;
@@ -98,15 +99,17 @@ export default function HistoryPage() {
       {loading ? (
         <div className="mt-12 flex justify-center"><SpectrumBars size="lg" animate className="text-primary" /></div>
       ) : filtered.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center gap-4 rounded-2xl bg-surface px-6 py-14 text-center shadow-sm">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-soft text-primary-200">
-            <SpectrumBars size="lg" />
+        <div className="relative mt-12 flex flex-col items-center gap-4 overflow-hidden rounded-2xl bg-surface px-6 py-14 text-center shadow-sm">
+          <GradientBlobs className="opacity-60" />
+          <DotGrid className="opacity-50" />
+          <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)]">
+            <SpectrumBars size="lg" className="text-white" />
           </div>
-          <div>
+          <div className="relative z-10">
             <p className="text-[14px] font-semibold text-ink">{history.length === 0 ? "No generations yet" : "No results found"}</p>
             <p className="mt-1 text-[13px] text-muted">{history.length === 0 ? "Generate your first voiceover and it will appear here." : "Try a different search or filter."}</p>
           </div>
-          {history.length === 0 && <Link href="/app" className="mt-2 rounded-xl bg-primary px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:bg-primary-strong">Create your first voice</Link>}
+          {history.length === 0 && <Link href="/app" className="relative z-10 mt-2 rounded-xl bg-gradient-to-r from-primary to-primary-strong px-5 py-2.5 text-[13px] font-semibold text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] transition hover:brightness-110">Create your first voice</Link>}
         </div>
       ) : (
         <div className="space-y-2.5">
@@ -125,9 +128,9 @@ export default function HistoryPage() {
             }
             return (
               <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-surface px-5 py-4 shadow-sm transition hover:shadow-md">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-soft text-primary">
-                  <SpectrumBars size="sm" />
-                </div>
+                <GradientIcon className="h-10 w-10 rounded-xl">
+                  <SpectrumBars size="sm" className="text-white" />
+                </GradientIcon>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-semibold text-ink">{item.text ? (item.text.length > 50 ? item.text.slice(0, 50) + "\u2026" : item.text) : "Untitled"}</p>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted">

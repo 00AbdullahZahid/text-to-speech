@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional
 
+import json
+
 from psycopg2.extensions import connection as PgConnection
 
 
@@ -369,3 +371,162 @@ def count_presets(
         )
         row = cur.fetchone()
     return int(row["count"]) if row else 0
+
+
+# ---------------------------------------------------------------------------
+# Generation jobs
+# ---------------------------------------------------------------------------
+
+
+def ensure_generation_jobs_table(conn: PgConnection) -> None:
+    """Create the generation_jobs table if it does not exist yet."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS generation_jobs (
+                id         TEXT PRIMARY KEY,
+                user_id    TEXT NOT NULL,
+                kind       TEXT NOT NULL,
+                status     TEXT NOT NULL,
+                text       TEXT,
+                payload    JSONB NOT NULL DEFAULT '{}'::jsonb,
+                results    JSONB,
+                error      TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+            )
+            """
+        )
+
+
+def _row_to_job(row: Dict[str, Any]) -> Dict[str, Any]:
+    def _load(value: Any) -> Any:
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (TypeError, ValueError):
+                return None
+        return value
+
+    return {
+        "id": row["id"],
+        "userId": row["user_id"],
+        "kind": row["kind"],
+        "status": row["status"],
+        "text": row.get("text"),
+        "payload": _load(row.get("payload")),
+        "results": _load(row.get("results")),
+        "error": row.get("error"),
+        "createdAt": row["created_at"].isoformat() if row.get("created_at") else "",
+        "updatedAt": row["updated_at"].isoformat() if row.get("updated_at") else "",
+    }
+
+
+def insert_job(
+    conn: PgConnection,
+    *,
+    job_id: str,
+    user_id: str,
+    kind: str,
+    status: str,
+    text: Optional[str],
+    payload: dict,
+) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO generation_jobs (id, user_id, kind, status, text, payload)
+            VALUES (%s, %s, %s, %s, %s, %s::jsonb)
+            ON CONFLICT (id) DO NOTHING
+            """,
+            (job_id, user_id, kind, status, text, json.dumps(payload)),
+        )
+
+
+def update_job(
+    conn: PgConnection,
+    *,
+    job_id: str,
+    status: str,
+    results: Any = None,
+    error: Optional[str] = None,
+) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE generation_jobs
+            SET status = %s,
+                results = %s::jsonb,
+                error = %s,
+                updated_at = now()
+            WHERE id = %s
+            """,
+            (
+                status,
+                json.dumps(results) if results is not None else None,
+                error,
+                job_id,
+            ),
+        )
+
+
+def get_job(
+    conn: PgConnection,
+    *,
+    job_id: str,
+    user_id: str,
+) -> Optional[Dict[str, Any]]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, user_id, kind, status, text, payload, results, error,
+                   created_at, updated_at
+            FROM generation_jobs
+            WHERE id = %s AND user_id = %s
+            """,
+            (job_id, user_id),
+        )
+        row = cur.fetchone()
+    return _row_to_job(row) if row else None
+
+
+def list_jobs(
+    conn: PgConnection,
+    *,
+    user_id: str,
+    limit: int = 50,
+) -> List[Dict[str, Any]]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, user_id, kind, status, text, payload, results, error,
+                   created_at, updated_at
+            FROM generation_jobs
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT %s
+            """,
+            (user_id, limit),
+        )
+        rows = cur.fetchall()
+    return [_row_to_job(row) for row in rows]
+
+
+def reap_interrupted_jobs(
+    conn: PgConnection,
+    *,
+    error: str,
+) -> int:
+    """Mark queued/running jobs as failed (e.g. after a backend restart)."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE generation_jobs
+            SET status = 'failed',
+                error = %s,
+                updated_at = now()
+            WHERE status IN ('queued', 'running')
+            """,
+            (error,),
+        )
+        return cur.rowcount

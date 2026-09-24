@@ -1,31 +1,36 @@
-"""OCR service — extracts text from images using Qwen2.5-VL.
+"""OCR service — extracts text from images using EasyOCR.
 
-The model and processor are loaded once at import time so each request
-is just an inference pass, not a cold-load.  Pixel count is capped to
-keep memory usage manageable on CPU.
+EasyOCR runs a CRAFT text detector plus a CNN recognizer. On CPU it is an
+order of magnitude faster than the previous Qwen2.5-VL-3B captioning model
+while staying accurate for printed text. The reader is loaded once at import
+time so each request is just detection + recognition passes.
+
+Languages can be changed via the OCR_LANGUAGES env var (comma-separated
+EasyOCR language codes, default "en").
 """
 from __future__ import annotations
 
 import base64
+import os
 from io import BytesIO
 
-import torch
+import numpy as np
 from PIL import Image
-from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
-from qwen_vl_utils import process_vision_info
 
-_MODEL_NAME = "Qwen/Qwen2.5-VL-3B-Instruct"
+import easyocr
 
-model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-    _MODEL_NAME,
-    torch_dtype=torch.float16,
-    device_map="cpu",
-)
-processor = AutoProcessor.from_pretrained(
-    _MODEL_NAME,
-    min_pixels=256 * 28 * 28,
-    max_pixels=640 * 28 * 28,
-)
+_LANGS = [
+    lang.strip()
+    for lang in os.getenv("OCR_LANGUAGES", "en").split(",")
+    if lang.strip()
+]
+_reader = easyocr.Reader(_LANGS, gpu=False, verbose=False)
+
+# Cap the longest edge so very large photos don't slow down detection.
+_MAX_EDGE = 1600
+
+# Drop detections we are not confident in; EasyOCR's scores are 0..1.
+_MIN_CONFIDENCE = 0.4
 
 
 def extract_text_from_base64(image_data: str) -> str:
@@ -39,49 +44,65 @@ def extract_text_from_base64(image_data: str) -> str:
         raise ValueError("Unable to decode image data") from exc
 
     try:
-        image = Image.open(BytesIO(image_bytes))
+        image = Image.open(BytesIO(image_bytes)).convert("RGB")
     except Exception as exc:
         raise ValueError("Unable to process image") from exc
 
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": image},
-                {
-                    "type": "text",
-                    "text": (
-                        "Extract all text from this image exactly as it appears. "
-                        "Output only the extracted text with no commentary."
-                    ),
-                },
-            ],
-        }
-    ]
+    if max(image.size) > _MAX_EDGE:
+        scale = _MAX_EDGE / max(image.size)
+        image = image.resize(
+            (
+                max(1, int(round(image.width * scale))),
+                max(1, int(round(image.height * scale))),
+            ),
+            Image.LANCZOS,
+        )
 
-    text = processor.apply_chat_template(
-        messages, tokenize=False, add_generation_prompt=True
-    )
-    image_inputs, video_inputs = process_vision_info(messages)
-    inputs = processor(
-        text=[text],
-        images=image_inputs,
-        videos=video_inputs,
-        padding=True,
-        return_tensors="pt",
-    )
+    result = _reader.readtext(np.array(image), detail=1, paragraph=False)
 
-    with torch.no_grad():
-        generated_ids = model.generate(**inputs, max_new_tokens=512)
+    boxes = []
+    for box, text, confidence in result:
+        if not text or not text.strip():
+            continue
+        if confidence < _MIN_CONFIDENCE:
+            continue
+        ys = [point[1] for point in box]
+        xs = [point[0] for point in box]
+        boxes.append(
+            {
+                "y": sum(ys) / len(ys),
+                "x": sum(xs) / len(xs),
+                "height": max(ys) - min(ys),
+                "text": text.strip(),
+            }
+        )
 
-    generated_ids_trimmed = [
-        out_ids[len(in_ids):]
-        for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-    ]
-    output_text = processor.batch_decode(
-        generated_ids_trimmed,
-        skip_special_tokens=True,
-        clean_up_tokenization_spaces=False,
-    )
+    # Reading order: top-to-bottom, then left-to-right within a line.
+    boxes.sort(key=lambda b: (b["y"], b["x"]))
+    return "\n".join(_group_into_lines(boxes))
 
-    return output_text[0].strip()
+
+def _group_into_lines(boxes) -> list[str]:
+    """Group sorted word boxes into visual lines using a running line height."""
+    lines: list[list[dict]] = []
+    current: list[dict] = []
+    line_y = None
+
+    for box in boxes:
+        tolerance = max(12.0, box["height"] * 0.6)
+        if line_y is None or abs(box["y"] - line_y) <= tolerance:
+            current.append(box)
+            line_y = box["y"] if line_y is None else (line_y * 0.7 + box["y"] * 0.3)
+        else:
+            lines.append(current)
+            current = [box]
+            line_y = box["y"]
+
+    if current:
+        lines.append(current)
+
+    output = []
+    for line in lines:
+        line.sort(key=lambda b: b["x"])
+        output.append(" ".join(b["text"] for b in line))
+    return output

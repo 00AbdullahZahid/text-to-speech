@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { AudioPlayer } from "../../components/AudioPlayer";
 import { ToastStack, type ToastItem } from "../../components/Toast";
 import { SpectrumBars } from "../../components/SpectrumBars";
+import { GradientIcon } from "../../components/Decorative";
 import { API_URL, apiFetch } from "../../lib/api";
 import { voiceName, voiceOptionsFallback } from "../../lib/voices";
 import { loadStudioDefaults } from "../../lib/theme";
@@ -16,6 +17,7 @@ import type {
   Preset,
   BatchItemResult,
   BatchResponse,
+  JobInfo,
 } from "../../lib/types";
 
 const FORMAT_LABELS: Record<AudioFormat, string> = {
@@ -27,9 +29,40 @@ const FORMAT_LABELS: Record<AudioFormat, string> = {
 
 type Mode = "single" | "batch";
 
+const FALLBACK_MAX_WORDS = 800;
+const FALLBACK_MAX_CHARS = 4000;
+
+function countWords(value: string): number {
+  const trimmed = value.trim();
+  return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+}
+
+// Hard word cap: keep the first `max` words, preserving the original spaces/newlines
+// of the retained text and discarding everything past the limit.
+function clampToWords(value: string, max: number): string {
+  if (max <= 0) return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const tokens = trimmed.match(/\S+\s*/g);
+  if (!tokens || tokens.length <= max) return value;
+  return tokens.slice(0, max).join("").trimEnd();
+}
+
+// Hard character cap: catches no-space input that a word count never sees.
+function clampToChars(value: string, max: number): string {
+  return value.length <= max ? value : value.slice(0, max);
+}
+
+// Apply both caps; the char cap runs first so it is always the un-bypassable floor.
+function clampText(value: string, maxWords: number, maxChars: number): { text: string; clamped: boolean } {
+  const charClamped = clampToChars(value, maxChars);
+  const wordClamped = clampToWords(charClamped, maxWords);
+  return { text: wordClamped, clamped: charClamped !== value || wordClamped !== charClamped };
+}
+
 export default function StudioPage() {
   const searchParams = useSearchParams();
-  const [text, setText] = useState<string>(() => searchParams.get("ocrText") ?? "");
+  const [text, setText] = useState<string>(() => clampText(searchParams.get("ocrText") ?? "", FALLBACK_MAX_WORDS, FALLBACK_MAX_CHARS).text);
   const [voiceId, setVoiceId] = useState("");
   const [voiceOptions, setVoiceOptions] = useState<{ id: string; name: string }[]>([]);
   const [speed, setSpeed] = useState(1.0);
@@ -37,11 +70,12 @@ export default function StudioPage() {
   const [mode, setMode] = useState<Mode>("single");
   const [batchScripts, setBatchScripts] = useState("");
   const [batchResults, setBatchResults] = useState<BatchItemResult[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [activeJob, setActiveJob] = useState<JobInfo | null>(null);
   const [history, setHistory] = useState<Generation[]>([]);
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
   const [minTextLength, setMinTextLength] = useState(1);
-  const [maxTextLength, setMaxTextLength] = useState(800);
+  const [maxTextWords, setMaxTextWords] = useState(FALLBACK_MAX_WORDS);
+  const [maxTextChars, setMaxTextChars] = useState(FALLBACK_MAX_CHARS);
   const [maxBatchItems, setMaxBatchItems] = useState(20);
   const [configLoaded, setConfigLoaded] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -54,9 +88,17 @@ export default function StudioPage() {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [presetName, setPresetName] = useState("");
   const [showSavePreset, setShowSavePreset] = useState(false);
+  const [clampedNotice, setClampedNotice] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const voiceDropdownRef = useRef<HTMLDivElement>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const clampNoticeTimer = useRef<number | undefined>(undefined);
+
+  function showClampNotice() {
+    setClampedNotice(`Limited to ${maxTextWords.toLocaleString()} words and ${maxTextChars.toLocaleString()} characters — extra text was removed.`);
+    window.clearTimeout(clampNoticeTimer.current);
+    clampNoticeTimer.current = window.setTimeout(() => setClampedNotice(null), 4000);
+  }
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -68,19 +110,23 @@ export default function StudioPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const wordCount = countWords(text);
   const charCount = text.length;
   const trimmedLength = text.trim().length;
-  const overLimit = charCount > maxTextLength;
+  const overLimit = wordCount > maxTextWords || charCount > maxTextChars;
+  const isGenerating = !!activeJob && (activeJob.status === "queued" || activeJob.status === "running");
   const canGenerate = configLoaded && trimmedLength >= minTextLength && !overLimit && !isGenerating && !!voiceId;
 
   const batchItems = parseBatch(batchScripts);
   const batchCount = batchItems.length;
   const batchOverLimit = batchCount > maxBatchItems;
-  const canBatch = configLoaded && !isGenerating && !!voiceId && batchCount >= 1 && !batchOverLimit && batchItems.every((t) => t.length <= maxTextLength);
+  const batchOverWords = batchItems.some((t) => countWords(t) > maxTextWords || t.length > maxTextChars);
+  const canBatch = configLoaded && !isGenerating && !!voiceId && batchCount >= 1 && !batchOverLimit && !batchOverWords;
 
   let validationError: string | null = null;
-  if (overLimit) validationError = `Text is over the ${maxTextLength}-character limit.`;
-  else if (charCount > 0 && trimmedLength === 0) validationError = "Whitespace-only text can\u2019t be spoken.";
+  if (charCount > maxTextChars) validationError = `Text is over the ${maxTextChars.toLocaleString()}-character limit.`;
+  else if (wordCount > maxTextWords) validationError = `Text is over the ${maxTextWords.toLocaleString()}-word limit.`;
+  else if (countWords(text) > 0 && trimmedLength === 0) validationError = "Whitespace-only text can\u2019t be spoken.";
   else if (trimmedLength > 0 && trimmedLength < minTextLength) validationError = "Text is too short.";
 
   function pushToast(tone: "success" | "error", msg: string) {
@@ -90,10 +136,6 @@ export default function StudioPage() {
   }
   function dismissToast(id: number) { setToasts((c) => c.filter((t) => t.id !== id)); }
 
-  async function fetchConfig() {
-    const res = await fetch(`${API_URL}/config`);
-    return (await res.json()) as AppConfig;
-  }
   async function fetchHistory() {
     const res = await apiFetch("/audio");
     const data = await res.json();
@@ -112,31 +154,35 @@ export default function StudioPage() {
   useEffect(() => {
     let ignore = false;
     const defaults = loadStudioDefaults();
-    fetchConfig().then((d) => {
-      if (ignore) return;
-      setVoiceOptions(d.voices);
-      setMinTextLength(d.minTextLength);
-      setMaxTextLength(d.maxTextLength);
-      if (d.maxBatchItems) setMaxBatchItems(d.maxBatchItems);
-      if (defaults?.voiceId && d.voices.some((v) => v.id === defaults.voiceId)) {
-        setVoiceId(defaults.voiceId);
-      } else {
-        setVoiceId((c) => c || d.voices[0]?.id || "");
-      }
-      if (typeof defaults?.speed === "number" && defaults.speed >= d.minSpeed && defaults.speed <= d.maxSpeed) {
-        setSpeed(defaults.speed);
-      }
-      if (defaults?.format && (Object.keys(FORMAT_LABELS) as AudioFormat[]).includes(defaults.format as AudioFormat)) {
-        setFormat(defaults.format as AudioFormat);
-      }
-      setConfigLoaded(true);
-    }).catch(() => {
-      if (ignore) return;
-      setVoiceOptions(voiceOptionsFallback());
-      setVoiceId((c) => c || voiceOptionsFallback()[0]?.id || "");
-      setConfigLoaded(true);
-      pushToast("error", "Could not reach the backend.");
-    });
+    fetch(`${API_URL}/config`)
+      .then((r) => r.json())
+      .then((d: AppConfig) => {
+        if (ignore) return;
+        setVoiceOptions(d.voices);
+        setMinTextLength(d.minTextLength);
+        setMaxTextWords(d.maxTextWords);
+        setMaxTextChars(d.maxTextChars ?? FALLBACK_MAX_CHARS);
+        if (d.maxBatchItems) setMaxBatchItems(d.maxBatchItems);
+        if (defaults?.voiceId && d.voices.some((v) => v.id === defaults.voiceId)) {
+          setVoiceId(defaults.voiceId);
+        } else {
+          setVoiceId((c) => c || d.voices[0]?.id || "");
+        }
+        if (typeof defaults?.speed === "number" && defaults.speed >= d.minSpeed && defaults.speed <= d.maxSpeed) {
+          setSpeed(defaults.speed);
+        }
+        if (defaults?.format && (Object.keys(FORMAT_LABELS) as AudioFormat[]).includes(defaults.format as AudioFormat)) {
+          setFormat(defaults.format as AudioFormat);
+        }
+        setConfigLoaded(true);
+      })
+      .catch(() => {
+        if (ignore) return;
+        setVoiceOptions(voiceOptionsFallback());
+        setVoiceId((c) => c || voiceOptionsFallback()[0]?.id || "");
+        setConfigLoaded(true);
+        pushToast("error", "Could not reach the backend.");
+      });
     fetchHistory().then((items) => {
       if (ignore) return;
       setHistory(items);
@@ -146,12 +192,91 @@ export default function StudioPage() {
       if (ignore) return;
       setPresets(p);
     });
+    apiFetch("/jobs")
+      .then((r) => r.json())
+      .then((d: { jobs?: JobInfo[] }) => {
+        if (ignore) return;
+        const inFlight = (d.jobs || []).find((j) => j.status === "queued" || j.status === "running");
+        if (inFlight) setActiveJob(inFlight);
+      })
+      .catch(() => {});
     return () => { ignore = true; };
   }, []);
 
+  async function handleJobFinalize(job: JobInfo) {
+    if (job.status === "completed") {
+      if (job.kind === "batch") {
+        const response = job.results as BatchResponse | null;
+        const results = response?.results ?? [];
+        setBatchResults(results);
+        const okCount = results.filter((r) => r.success).length;
+        if (okCount > 0) pushToast("success", `Generated ${okCount} of ${results.length} files.`);
+        if (okCount < results.length) {
+          pushToast("error", `${results.length - okCount} item${results.length - okCount === 1 ? "" : "s"} failed.`);
+          setLastError(`${results.length - okCount} item${results.length - okCount === 1 ? "" : "s"} failed. Check the results below.`);
+        }
+      } else {
+        const single = job.results as { filename?: string; format?: AudioFormat } | null;
+        pushToast("success", "Audio generated successfully.");
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3500);
+        if (single?.filename) {
+          try {
+            const items = await fetchHistory();
+            setHistory(items);
+            const gen = items.find((i) => i.filename === single.filename) || items[0] || null;
+            setSelectedGeneration(gen);
+            if (gen) setPlaySignal((v) => v + 1);
+          } catch {}
+        }
+      }
+    } else if (job.status === "failed") {
+      const msg = job.error || "Generation failed.";
+      setLastError(msg);
+      pushToast("error", `Failed \u2014 ${msg}`);
+      if (job.kind === "batch") setBatchResults([]);
+    }
+  }
+
+  useEffect(() => {
+    const job = activeJob;
+    if (!job) return;
+    // Terminal jobs are finalized by the poll callback below.
+    if (job.status === "completed" || job.status === "failed") return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await apiFetch(`/jobs/${encodeURIComponent(job.id)}`);
+        if (cancelled) return;
+        if (!res.ok) {
+          if (res.status === 404) {
+            const failed: JobInfo = { ...job, status: "failed", error: "Generation was interrupted and can\u2019t be resumed." };
+            setActiveJob(failed);
+            handleJobFinalize(failed);
+          }
+          return;
+        }
+        const next = (await res.json()) as JobInfo;
+        if (cancelled) return;
+        setActiveJob(next);
+        if (next.status === "completed" || next.status === "failed") {
+          handleJobFinalize(next);
+        }
+      } catch {
+        // Transient network error — keep polling.
+      }
+    };
+    const timer = window.setInterval(tick, 3000);
+    tick();
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeJob?.id, activeJob?.status]);
+
   async function handleGenerate() {
     if (!canGenerate) return;
-    setIsGenerating(true);
     setLastError(null);
     setShowSuccess(false);
     try {
@@ -160,33 +285,25 @@ export default function StudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voiceId, speed, format }),
       });
-      const data = await res.json();
       if (!res.ok) {
+        const data = await res.json();
         const msg = data?.detail || "Generation failed.";
         setLastError(msg);
         pushToast("error", `Failed \u2014 ${msg}`);
         return;
       }
-      const items = await fetchHistory();
-      setHistory(items);
-      const gen = items.find((i) => i.filename === data.filename) || items[0] || null;
-      setSelectedGeneration(gen);
-      if (gen) setPlaySignal((v) => v + 1);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3500);
-      pushToast("success", "Audio generated successfully.");
+      const data = await res.json();
+      if (!data?.jobId) throw new Error("Backend did not return a job id.");
+      setBatchResults([]);
+      setActiveJob({ id: data.jobId, kind: "single", status: "queued", createdAt: "", updatedAt: "" });
     } catch {
-      setLastError("Unable to generate audio. Please try again.");
-      pushToast("error", "Unable to generate audio.");
-    } finally {
-      setIsGenerating(false);
+      setLastError("Unable to start generation. Please try again.");
+      pushToast("error", "Unable to start generation.");
     }
   }
 
   async function handleBatch() {
     if (!canBatch) return;
-    setIsGenerating(true);
-    setBatchResults([]);
     setLastError(null);
     setShowSuccess(false);
     try {
@@ -196,21 +313,20 @@ export default function StudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
       });
-      const data = (await res.json()) as BatchResponse;
-      setBatchResults(data.results || []);
       if (!res.ok) {
-        pushToast("error", data?.total === undefined ? "Batch generation failed." : "Batch generated with errors.");
-      } else {
-        pushToast("success", `Generated ${data.results?.filter((r) => r.success).length ?? 0} of ${data.total} files.`);
+        const data = await res.json();
+        const msg = data?.detail || "Batch generation failed.";
+        setLastError(msg);
+        pushToast("error", `Failed \u2014 ${msg}`);
+        return;
       }
-      const updated = await fetchHistory();
-      setHistory(updated);
-      setSelectedGeneration((c) => c || updated[0] || null);
+      const data = await res.json();
+      if (!data?.jobId) throw new Error("Backend did not return a job id.");
+      setBatchResults([]);
+      setActiveJob({ id: data.jobId, kind: "batch", status: "queued", createdAt: "", updatedAt: "" });
     } catch {
       setLastError("Unable to run batch generation.");
       pushToast("error", "Unable to run batch generation.");
-    } finally {
-      setIsGenerating(false);
     }
   }
 
@@ -233,7 +349,6 @@ export default function StudioPage() {
     } catch {
       pushToast("error", "Preview unavailable for this voice.");
     } finally {
-      // leave spinner until play ends; next click allowed once ended/failed
       window.setTimeout(() => setPreviewingVoice((c) => (c === id ? null : c)), 3000);
     }
   }
@@ -309,22 +424,22 @@ export default function StudioPage() {
 
   return (
     <>
-      <div className="mb-8 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">TTS Studio</h1>
-          <p className="mt-1 text-[14px] text-muted">Create natural-sounding speech from text &mdash; or extract text from an image first.</p>
+      <div className="mb-8 flex items-start gap-4">
+          <GradientIcon className="h-12 w-12 rounded-2xl">
+            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="2" width="6" height="12" rx="3" />
+              <path d="M5 10a7 7 0 0014 0" />
+              <line x1="12" y1="17" x2="12" y2="22" />
+            </svg>
+          </GradientIcon>
+          <div>
+            <h1 className="font-display text-[24px] font-bold tracking-tight text-ink">TTS Studio</h1>
+            <p className="mt-1 text-[14px] text-muted">Create natural-sounding speech from text &mdash; or extract text from an image first.</p>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2 rounded-full bg-soft px-4 py-2 text-[11px] font-semibold text-primary shadow-sm ring-1 ring-primary/15">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
-          </span>
-          Supabase connected
-        </div>
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
-        <section className="rounded-2xl bg-surface p-6 shadow-sm">
+        <section className="min-w-0 rounded-2xl bg-surface p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-[15px] font-semibold text-ink">Script</h2>
@@ -352,9 +467,14 @@ export default function StudioPage() {
                 <textarea
                   ref={textareaRef}
                   value={text}
-                  onChange={(e) => setText(e.target.value)}
+                  onChange={(e) => {
+                    const { text: next, clamped } = clampText(e.target.value, maxTextWords, maxTextChars);
+                    if (clamped) showClampNotice();
+                    setText(next);
+                  }}
                   rows={8}
                   placeholder="Enter the text you want Voxa to speak..."
+                  wrap="soft"
                   className={`w-full resize-none rounded-xl border bg-soft p-4 text-[14px] leading-relaxed text-ink placeholder:text-faint transition focus:outline-none focus:ring-2 ${
                     overLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100 dark:border-red-800/60 dark:focus:border-red-400 dark:focus:ring-red-900/40" : "border-line focus:border-primary focus:ring-primary/15"
                   }`}
@@ -363,36 +483,55 @@ export default function StudioPage() {
 
               <div className="mt-2 flex items-center justify-between">
                 <span className={`text-[11px] font-medium ${overLimit ? "text-error" : "text-muted"}`}>
-                  {charCount} / {maxTextLength.toLocaleString()} characters
+                  {wordCount.toLocaleString()} / {maxTextWords.toLocaleString()} words &middot; {charCount.toLocaleString()} / {maxTextChars.toLocaleString()} chars
                 </span>
                 {validationError && <span className="text-[11px] font-medium text-error">{validationError}</span>}
               </div>
+              {clampedNotice && <p className="mt-1 text-[11px] font-medium text-accent">{clampedNotice}</p>}
             </>
           ) : (
             <>
               <div className="relative mt-4">
                 <textarea
                   value={batchScripts}
-                  onChange={(e) => setBatchScripts(e.target.value)}
+                  onChange={(e) => {
+                    let clamped = false;
+                    const next = e.target.value
+                      .split(/\n\s*\n/)
+                      .map((block) => {
+                        const r = clampText(block, maxTextWords, maxTextChars);
+                        if (r.clamped) clamped = true;
+                        return r.text;
+                      })
+                      .join("\n\n");
+                    if (clamped) showClampNotice();
+                    setBatchScripts(next);
+                  }}
                   rows={9}
+                  wrap="soft"
                   placeholder={"One script per block, separated by a blank line:\n\nWelcome to Voxa.\nSpeak this second line.\n\nA third line here."}
                   className={`w-full resize-none rounded-xl border bg-soft p-4 text-[14px] leading-relaxed text-ink placeholder:text-faint transition focus:outline-none focus:ring-2 ${
-                    batchOverLimit ? "border-red-200 focus:border-red-400 focus:ring-red-100 dark:border-red-800/60 dark:focus:border-red-400 dark:focus:ring-red-900/40" : "border-line focus:border-primary focus:ring-primary/15"
+                    batchOverLimit || batchOverWords ? "border-red-200 focus:border-red-400 focus:ring-red-100 dark:border-red-800/60 dark:focus:border-red-400 dark:focus:ring-red-900/40" : "border-line focus:border-primary focus:ring-primary/15"
                   }`}
                 />
               </div>
 
               <div className="mt-2 flex items-center justify-between">
-                <span className={`text-[11px] font-medium ${batchOverLimit ? "text-error" : "text-muted"}`}>
-                  {batchCount} script{batchCount === 1 ? "" : "s"} &middot; max {maxBatchItems}
+                <span className={`text-[11px] font-medium ${batchOverLimit || batchOverWords ? "text-error" : "text-muted"}`}>
+                  {batchCount} script{batchCount === 1 ? "" : "s"} &middot; up to {maxTextWords.toLocaleString()} words &amp; {maxTextChars.toLocaleString()} chars each &middot; max {maxBatchItems}
                 </span>
-                {batchOverLimit && <span className="text-[11px] font-medium text-error">Too many scripts for one batch.</span>}
+                {(batchOverLimit || batchOverWords) && (
+                  <span className="text-[11px] font-medium text-error">
+                    {batchOverLimit ? "Too many scripts for one batch." : "One or more scripts exceed the word or character limit."}
+                  </span>
+                )}
               </div>
+              {clampedNotice && <p className="mt-1 text-[11px] font-medium text-accent">{clampedNotice}</p>}
 
               {batchResults.length > 0 && !isGenerating && (
                 <div className="mt-4 space-y-2 border-t border-line pt-4">
                   {batchResults.map((r) => (
-                    <div key={r.index} className="flex items-center gap-3 rounded-xl bg-soft px-4 py-2.5">
+                    <div key={r.index} className="flex min-w-0 items-center gap-3 rounded-xl bg-soft px-4 py-2.5">
                       <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
                         r.success ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300" : "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-300"
                       }`}>
@@ -561,7 +700,7 @@ export default function StudioPage() {
           </Link>
         </section>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <section className="rounded-2xl bg-surface p-6 shadow-sm">
             <h2 className="text-[15px] font-semibold text-ink">Generation settings</h2>
 
@@ -615,7 +754,7 @@ export default function StudioPage() {
               className={`mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl py-3.5 text-[14px] font-semibold transition ${
                 isGenerating ? "cursor-wait bg-primary text-white opacity-80"
                   : (mode === "batch" ? !canBatch : !canGenerate) ? "cursor-not-allowed bg-primary-200 text-muted"
-                  : "bg-primary text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)] hover:bg-primary-strong active:scale-[0.99]"
+                  : "bg-gradient-to-r from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.55)] hover:brightness-110 hover:shadow-[0_10px_30px_-6px_rgba(37,99,235,0.7)] active:scale-[0.99]"
               }`}
             >
               {isGenerating ? (
@@ -642,11 +781,11 @@ export default function StudioPage() {
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary">
                   <SpectrumBars size="md" animate className="text-white" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-[14px] font-semibold text-ink">
-                    {mode === "batch" ? "Generating batch&hellip;" : "Generating audio&hellip;"}
+                    {activeJob?.kind === "batch" ? "Generating batch&hellip;" : "Generating audio&hellip;"}
                   </p>
-                  <p className="text-[12px] text-muted">Kokoro-82M is generating your audio&hellip;</p>
+                  <p className="text-[12px] text-muted">Voxa is working in the background &mdash; you can navigate away or reload this page and it will keep going.</p>
                 </div>
               </div>
             </section>
@@ -662,7 +801,7 @@ export default function StudioPage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-[13px] font-medium text-red-700 dark:text-red-300">{lastError}</p>
+                  <p className="break-words text-[13px] font-medium text-red-700 dark:text-red-300">{lastError}</p>
                   <button type="button" onClick={mode === "batch" ? handleBatch : handleGenerate} className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold text-error transition hover:text-red-700 dark:hover:text-red-400">
                     <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 4v6h6" />
@@ -697,7 +836,7 @@ export default function StudioPage() {
                 <span className="rounded-lg bg-soft px-2.5 py-1 font-mono text-[11px] font-semibold text-primary">{selectedGeneration.speed.toFixed(2)}&times;</span>
                 <span className="rounded-lg bg-soft px-2.5 py-1 font-mono text-[11px] font-semibold uppercase text-primary">{selectedGeneration.format || "wav"}</span>
               </div>
-              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-ink line-clamp-2">{selectedGeneration.text}</p>}
+              {selectedGeneration.text && <p className="mb-3 text-[13px] leading-relaxed text-ink line-clamp-2 break-words">{selectedGeneration.text}</p>}
               <AudioPlayer
                 src={audioUrl}
                 autoPlay={playSignal > 0}
@@ -739,9 +878,9 @@ export default function StudioPage() {
               const dl = item.audio_url?.startsWith("http") ? item.audio_url : `${API_URL}/outputs/${item.filename}`;
               return (
                 <div key={item.filename} className="flex items-center gap-4 rounded-2xl bg-surface px-5 py-3.5 shadow-sm transition hover:shadow-md">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-soft text-primary">
-                    <SpectrumBars size="sm" />
-                  </div>
+                  <GradientIcon className="h-10 w-10 rounded-xl">
+                    <SpectrumBars size="sm" className="text-white" />
+                  </GradientIcon>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] font-semibold text-ink">{item.text ? (item.text.length > 40 ? item.text.slice(0, 40) + "\u2026" : item.text) : "Untitled"}</p>
                     <p className="text-[11px] text-muted">{voiceName(item.voice, voiceOptions)} &middot; {item.speed}&times; &middot; <span className="uppercase">{item.format || "wav"}</span></p>

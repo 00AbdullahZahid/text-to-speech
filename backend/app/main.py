@@ -31,6 +31,7 @@ from exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
 )
+from services import jobs
 
 # Ensure the outputs directory exists
 os.makedirs(OUTPUTS_DIR, exist_ok=True)
@@ -38,6 +39,16 @@ os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
 def create_app() -> FastAPI:
     app = FastAPI()
+
+    @app.on_event("startup")
+    def _startup_recovery() -> None:
+        """Best-effort: create the jobs table and reap stale jobs. Never
+        blocks startup — the app works fine without PostgreSQL.
+        """
+        try:
+            jobs.startup_recovery()
+        except Exception as exc:  # noqa: BLE001 - best-effort
+            print(f"[startup] jobs recovery skipped: {exc}")
 
     app.add_exception_handler(
         RequestValidationError,

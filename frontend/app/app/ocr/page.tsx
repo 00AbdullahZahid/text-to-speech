@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "../../../lib/api";
 import { SpectrumBars } from "../../../components/SpectrumBars";
+import { DotGrid, GradientBlobs } from "../../../components/Decorative";
 
 type OcrState = "upload" | "uploading" | "processing" | "result" | "error";
 
@@ -118,12 +119,14 @@ export default function OcrPage() {
             }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
-            className={`flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed transition ${
+            className={`relative flex min-h-[320px] cursor-pointer flex-col items-center justify-center gap-4 overflow-hidden rounded-2xl border-2 border-dashed transition ${
               dragOver
                 ? "border-primary bg-soft"
                 : "border-primary-200 bg-surface hover:border-primary-200 hover:bg-soft"
             }`}
           >
+            <GradientBlobs className="opacity-60" />
+            <DotGrid className="opacity-40" />
             <input
               ref={fileInputRef}
               type="file"
@@ -131,10 +134,10 @@ export default function OcrPage() {
               onChange={handleFileChange}
               className="hidden"
             />
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-soft text-primary">
-              <SpectrumBars size="lg" />
+            <div className="relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)]">
+              <SpectrumBars size="lg" className="text-white" />
             </div>
-            <div className="text-center">
+            <div className="relative z-10 text-center">
               <p className="text-[15px] font-semibold text-ink">
                 Drop an image here or{" "}
                 <span className="text-primary">browse</span>
@@ -173,8 +176,8 @@ export default function OcrPage() {
 
               {/* Right: Preparing */}
               <div className="flex flex-col items-center justify-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-soft">
-                  <SpectrumBars size="lg" className="text-primary" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)]">
+                  <SpectrumBars size="lg" className="text-white" />
                 </div>
                 <div className="text-center">
                   <p className="text-[15px] font-semibold text-ink">
@@ -242,15 +245,15 @@ export default function OcrPage() {
 
               {/* Right: Processing */}
               <div className="flex flex-col items-center justify-center gap-5">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-soft">
-                  <SpectrumBars size="xl" animate className="text-primary" />
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-strong text-white shadow-[0_8px_24px_-6px_rgba(37,99,235,0.5)]">
+                  <SpectrumBars size="xl" animate className="text-white" />
                 </div>
                 <div className="text-center">
                   <p className="text-[16px] font-semibold text-ink">
                     Analyzing image&hellip;
                   </p>
                   <p className="mt-1.5 text-[12px] text-muted">
-                    Qwen2.5-VL-3B-Instruct is reading your image
+                    Voxa is reading your image
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-[12px] text-faint">
